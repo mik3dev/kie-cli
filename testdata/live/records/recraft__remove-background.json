@@ -1,0 +1,21 @@
+{
+  "completeTime": 1792261203045,
+  "costTime": 6,
+  "createTime": 1792261196532,
+  "creditsConsumed": 1,
+  "failCode": null,
+  "failMsg": null,
+  "model": "recraft/remove-background",
+  "operationType": "recraft/remove-background",
+  "param": "{\"input\":\"{\\\"image\\\":\\\"https://cdn.example/in.png\\\"}\",\"model\":\"recraft/remove-background\"}",
+  "paramJson": "{\"input\":\"{\\\"image\\\":\\\"https://cdn.example/in.png\\\"}\",\"model\":\"recraft/remove-background\"}",
+  "response": {
+    "resultUrls": [
+      "https://cdn.example/d20b032890c8.png"
+    ]
+  },
+  "resultJson": "{\"resultUrls\":[\"https://cdn.example/d20b032890c8.png\"]}",
+  "state": "success",
+  "successFlag": 1,
+  "taskId": "d81309e5bbe661618c25ba0ca97ca2ab"
+}

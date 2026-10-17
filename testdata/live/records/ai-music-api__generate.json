@@ -1,0 +1,50 @@
+{
+  "completeTime": 1792261343952,
+  "costTime": 39,
+  "createTime": 1792261304403,
+  "creditsConsumed": 12,
+  "failCode": null,
+  "failMsg": null,
+  "model": "ai-music-api/generate",
+  "operationType": "ai-music-api/generate",
+  "param": "{\"input\":\"{\\\"custom_mode\\\":false,\\\"instrumental\\\":true,\\\"model\\\":\\\"V6\\\",\\\"prompt\\\":\\\"calm lo-fi piano\\\"}\",\"model\":\"ai-music-api/generate\"}",
+  "paramJson": "{\"input\":\"{\\\"custom_mode\\\":false,\\\"instrumental\\\":true,\\\"model\\\":\\\"V6\\\",\\\"prompt\\\":\\\"calm lo-fi piano\\\"}\",\"model\":\"ai-music-api/generate\"}",
+  "parentMusicId": "",
+  "response": {
+    "code": 200,
+    "data": [
+      {
+        "audio_url": "https://cdn.example/3b1847d9-a656-4ec0-910e-d5b06f8ec5e9.mp3",
+        "createTime": 1792261343952,
+        "duration": 167.6,
+        "id": "3b1847d9-a656-4ec0-910e-d5b06f8ec5e9",
+        "image_url": "https://cdn.example/image_3b1847d9-a656-4ec0-910e-d5b06f8ec5e9.jpeg",
+        "model_name": "chirp-hawk",
+        "prompt": "[Instrumental]",
+        "stream_audio_url": "https://cdn.example/3b1847d9-a656-4ec0-910e-d5b06f8ec5e9.mp3",
+        "tags": "Lo-fi piano with a laid-back swung groove, brushed kick and soft sub pulses; verse-like sections thin to solo felt piano and vinyl hiss, then add muted Rhodes, tiny rim taps, and warm pad swells. Gentle risers, reversed piano tails, and tape wobble bridge the changes. Intimate close-mic mix, dusty and mellow, with soft sidechain breathing., lo-fi",
+        "title": "Rain on Keys"
+      },
+      {
+        "audio_url": "https://cdn.example/d3120281-0e37-4fa3-9404-160f8dfabe6d.mp3",
+        "createTime": 1792261343952,
+        "duration": 179.6,
+        "id": "d3120281-0e37-4fa3-9404-160f8dfabe6d",
+        "image_url": "https://cdn.example/image_d3120281-0e37-4fa3-9404-160f8dfabe6d.jpeg",
+        "model_name": "chirp-hawk",
+        "prompt": "[Instrumental]",
+        "stream_audio_url": "https://cdn.example/d3120281-0e37-4fa3-9404-160f8dfabe6d.mp3",
+        "tags": "Lo-fi piano with a laid-back swung groove, brushed kick and soft sub pulses; verse-like sections thin to solo felt piano and vinyl hiss, then add muted Rhodes, tiny rim taps, and warm pad swells. Gentle risers, reversed piano tails, and tape wobble bridge the changes. Intimate close-mic mix, dusty and mellow, with soft sidechain breathing., lo-fi",
+        "title": "Rain on Keys"
+      }
+    ],
+    "msg": "success",
+    "task_id": "08fcec83afcf03c1ae8ea5ecf70c8aa4"
+  },
+  "resultJson": "{\"code\":200,\"data\":[{\"audio_url\":\"https://cdn.example/3b1847d9-a656-4ec0-910e-d5b06f8ec5e9.mp3\",\"createTime\":1792261343952,\"duration\":167.6,\"id\":\"3b1847d9-a656-4ec0-910e-d5b06f8ec5e9\",\"image_url\":\"https://cdn.example/image_3b1847d9-a656-4ec0-910e-d5b06f8ec5e9.jpeg\",\"model_name\":\"chirp-hawk\",\"prompt\":\"[Instrumental]\",\"stream_audio_url\":\"https://cdn.example/3b1847d9-a656-4ec0-910e-d5b06f8ec5e9.mp3\",\"tags\":\"Lo-fi piano with a laid-back swung groove, brushed kick and soft sub pulses; verse-like sections thin to solo felt piano and vinyl hiss, then add muted Rhodes, tiny rim taps, and warm pad swells. Gentle risers, reversed piano tails, and tape wobble bridge the changes. Intimate close-mic mix, dusty and mellow, with soft sidechain breathing., lo-fi\",\"title\":\"Rain on Keys\"},{\"audio_url\":\"https://cdn.example/d3120281-0e37-4fa3-9404-160f8dfabe6d.mp3\",\"createTime\":1792261343952,\"duration\":179.6,\"id\":\"d3120281-0e37-4fa3-9404-160f8dfabe6d\",\"image_url\":\"https://cdn.example/image_d3120281-0e37-4fa3-9404-160f8dfabe6d.jpeg\",\"model_name\":\"chirp-hawk\",\"prompt\":\"[Instrumental]\",\"stream_audio_url\":\"https://cdn.example/d3120281-0e37-4fa3-9404-160f8dfabe6d.mp3\",\"tags\":\"Lo-fi piano with a laid-back swung groove, brushed kick and soft sub pulses; verse-like sections thin to solo felt piano and vinyl hiss, then add muted Rhodes, tiny rim taps, and warm pad swells. Gentle risers, reversed piano tails, and tape wobble bridge the changes. Intimate close-mic mix, dusty and mellow, with soft sidechain breathing., lo-fi\",\"title\":\"Rain on Keys\"}],\"msg\":\"success\",\"task_id\":\"08fcec83afcf03c1ae8ea5ecf70c8aa4\"}",
+  "state": "success",
+  "status": "SUCCESS",
+  "successFlag": 1,
+  "taskId": "08fcec83afcf03c1ae8ea5ecf70c8aa4",
+  "type": "chirp-hawk"
+}
