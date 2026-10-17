@@ -111,7 +111,7 @@ func matches(m Model, typ, prov, text string) bool {
 		if m.Description != nil {
 			desc = *m.Description
 		}
-		hay := strings.ToLower(m.Model + "\n" + m.Title + "\n" + desc)
+		hay := strings.ToLower(m.Model + "\n" + m.Title + "\n" + m.Provider + "\n" + desc)
 		if !strings.Contains(hay, text) {
 			return false
 		}

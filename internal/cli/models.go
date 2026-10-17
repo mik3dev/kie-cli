@@ -94,7 +94,7 @@ func newModelsListCmd(deps Deps) *cobra.Command {
 func newModelsSearchCmd(deps Deps) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "search <text>",
-		Short: "Search models by text in id, title and description",
+		Short: "Search models by text in id, title, provider and description",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			svc, err := newCatalog(cmd, deps)
