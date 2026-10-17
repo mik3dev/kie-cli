@@ -90,8 +90,12 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 	if err != nil {
 		return err
 	}
-	if !doc.IsJob() {
-		return usageErr("%s is a synchronous model: synchronous models arrive in stage 4", model)
+	if isChatModel(m.TaskType) {
+		return usageErr(chatMsg)
+	}
+	if !doc.IsJob() && len(m.TaskType) == 0 {
+		// Offline catalog fallback: a non-job schema may be chat or synchronous.
+		return usageErr("cannot tell whether %s is a chat or a synchronous model while the catalog is unreachable; retry online", model)
 	}
 	if doc.Null() {
 		_, _ = fmt.Fprintln(warn, "warning: "+nullSchemaWarning)
@@ -100,8 +104,11 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 	if err != nil {
 		return err
 	}
+	if !doc.IsJob() {
+		return runSync(cmd, deps, c, paths, cfg, doc, model, prep, warn)
+	}
 	if dry, _ := flags.GetBool("dry-run"); dry {
-		return emitDryRun(cmd, deps, c, paths, model, prep, warn)
+		return emitDryRun(cmd, deps, c, paths, model, prep, dryTarget{body: map[string]any{"model": model, "input": prep.checked}}, warn)
 	}
 	input, uploaded, err := upload.ResolveLocal(cmd.Context(), prep.input, prep.isFile, func(ctx context.Context, p string) (string, error) {
 		return upload.File(ctx, c, p)
@@ -231,12 +238,21 @@ func capGot(problems []schema.Problem) []schema.Problem {
 	return out
 }
 
+// dryTarget is the request --dry-run reports; path is set for synchronous endpoints only.
+type dryTarget struct {
+	path string
+	body map[string]any
+}
+
 // emitDryRun prints the request that would be sent; nothing is uploaded or submitted.
-func emitDryRun(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths, model string, p preparedInput, warn io.Writer) error {
+func emitDryRun(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths, model string, p preparedInput, t dryTarget, warn io.Writer) error {
 	out := map[string]any{
 		"dryRun": true, "model": model,
-		"body":           map[string]any{"model": model, "input": p.checked},
+		"body":           t.body,
 		"pendingUploads": p.pending,
+	}
+	if t.path != "" {
+		out["path"] = t.path
 	}
 	if p.pending == nil {
 		out["pendingUploads"] = []pendingUpload{}

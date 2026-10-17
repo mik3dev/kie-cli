@@ -137,21 +137,33 @@ func Submit(ctx context.Context, c *api.Client, ledgerPath, model string, input 
 }
 
 func classifySubmitErr(ledgerPath, model, outDir string, now time.Time, err error, w io.Writer) error {
+	mapped, ambiguous := classifyCreateErr(err)
+	if ambiguous {
+		return uncertain(ledgerPath, model, outDir, now, err, w)
+	}
+	return mapped
+}
+
+// classifyCreateErr is the error policy shared by every POST that may have
+// side effects (createTask and synchronous endpoints). ambiguous reports that
+// the request may have been processed (sent-and-unanswered, 5xx/455, malformed
+// 2xx); otherwise mapped is the error to return.
+func classifyCreateErr(err error) (mapped error, ambiguous bool) {
 	var ne *api.NetError
 	if errors.As(err, &ne) {
 		if ne.Sent {
-			return uncertain(ledgerPath, model, outDir, now, err, w)
+			return nil, true
 		}
-		return &output.Error{Code: output.CodeAPI, Message: err.Error()}
+		return &output.Error{Code: output.CodeAPI, Message: err.Error()}, false
 	}
 	var ae *api.Error
 	if errors.As(err, &ae) {
 		if ae.KieCode >= 500 || ae.KieCode == 455 || malformed2xx(ae) {
-			return uncertain(ledgerPath, model, outDir, now, err, w)
+			return nil, true
 		}
-		return ae.AsOutput()
+		return ae.AsOutput(), false
 	}
-	return err
+	return err, false
 }
 
 // malformed2xx: kie answered 2xx but the body is unusable, so the task may exist.
