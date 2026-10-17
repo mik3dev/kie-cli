@@ -154,7 +154,7 @@ Dependencias sugeridas: `spf13/cobra` (subcomandos), `gopkg.in/yaml.v3` y un val
 
 ## 8. Etapas y estimaciones (aprobado)
 
-*(Decisión del builder)* Se planifica e implementa **una etapa a la vez**: primero el plan de la etapa 1, y al final de cada etapa el dueño revisa antes de pasar a la siguiente. **No hay API key durante el desarrollo** (decisión del dueño): las etapas 1–6 se prueban contra mocks hechos con los ejemplos y schemas de la documentación (`docs/research/`). La etapa 7 verifica contra la API real con una key válida y corrige lo que aparezca. Si ahí el catálogo o los schemas no se comportan como dice la documentación (por ejemplo, muchos schemas `null` o Suno, Veo o Runway ausentes del catálogo), el builder se detiene y lo consulta con el dueño antes de cambiar el diseño. Se pueden agregar flags nuevos si no rompen la interfaz aprobada, siempre que se mencionen en la revisión de la etapa. La revisión de presets que hace el dueño no bloquea la etapa 5: se publica la lista inicial y él la ajusta después.
+*(Decisión del builder)* Se planifica e implementa **una etapa a la vez**: primero el plan de la etapa 1, y al final de cada etapa el dueño revisa antes de pasar a la siguiente. **Uso de la API real** (decisión del dueño): hay una key con **80 créditos**, pero solo se usa en smoke tests de validación, **nunca en CI**. Las etapas 1–6 se prueban contra mocks hechos con los ejemplos y schemas de la documentación (`docs/research/`). La etapa 7 verifica contra la API real y corrige lo que aparezca. Si ahí el catálogo o los schemas no se comportan como dice la documentación (por ejemplo, muchos schemas `null` o Suno, Veo o Runway ausentes del catálogo), el builder se detiene y lo consulta con el dueño antes de cambiar el diseño. Se pueden agregar flags nuevos si no rompen la interfaz aprobada, siempre que se mencionen en la revisión de la etapa. La revisión de presets que hace el dueño no bloquea la etapa 5: se publica la lista inicial y él la ajusta después.
 
 Cada etapa tiene su propio plan de implementación (TDD, cobertura ≥80%). Las estimaciones son en días de trabajo asistido por agente, con incertidumbre de ±50%: al trabajar sin API real, la etapa 7 puede revelar retrabajo.
 
@@ -173,10 +173,10 @@ Cada etapa tiene su propio plan de implementación (TDD, cobertura ≥80%). Las 
 ## 9. Pruebas
 - Unitarias: coerción, resolución `$ref`, validación, extracción de resultados (con fixtures reales de `docs/research/`), nombrado de archivos y mapeo de errores.
 - Integración: servidor `httptest` que imita createTask, recordInfo, upload, catálogo y schema, incluidos errores con HTTP 200 + `code`, 429 y tareas que fallan.
-- E2E: smoke tests contra la API real, controlados por `KIE_API_KEY` y `KIE_E2E=1`, con un modelo barato de imagen, un TTS y `--dry-run` de video. No corren en CI por defecto.
+- Smoke tests reales: tras el build tag `live` (`go test -tags=live ./...`) y además `KIE_E2E=1`. Se ejecutan **solo a mano**. El workflow de CI no usa el tag ni tiene la key como secret. Presupuesto: **80 créditos en total**. Un video de 5s cuesta del orden de 160 créditos, así que en video solo se hace `--dry-run` y encadenamientos sin costo. Se generan de verdad: 1–2 imágenes baratas, 1 TTS y, si alcanza, 1 Suno. Antes de cada generación se comparan `credits` y `price`, y el test se salta si el costo supera el presupuesto restante.
 
 ## 10. Riesgos y preguntas abiertas
-- **Sin validación real todavía.** Todo sale de la documentación. No hay API key durante el desarrollo: todo se prueba contra mocks y la verificación real es la etapa 7.
+- **Sin validación real todavía.** Todo sale de la documentación. El desarrollo se prueba contra mocks y la verificación real (manual, 80 créditos) es la etapa 7.
 - Documentación de Suno inconsistente (lista de `required` errónea, path de recovery contradictorio): validar en vivo.
 - Schema `null` para modelos recién añadidos: se envía sin validar, con aviso.
 - La detección de "campo que acepta archivo" es heurística: probarla contra todos los schemas del catálogo en la etapa 7.
