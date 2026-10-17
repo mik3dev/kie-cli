@@ -32,7 +32,7 @@ func NewRoot(deps Deps) *cobra.Command {
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return &output.Error{Code: output.CodeUsage, Message: err.Error()}
 	})
-	root.AddCommand(newVersionCmd(deps))
+	root.AddCommand(newVersionCmd(deps), newAuthCmd(deps))
 	return root
 }
 
