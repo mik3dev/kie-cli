@@ -3,8 +3,10 @@ module github.com/mik3dev/kie-cli
 go 1.27
 
 require (
+	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2
 	github.com/spf13/cobra v1.10.2
 	golang.org/x/term v0.47.0
+	golang.org/x/text v0.43.0
 )
 
 require (
