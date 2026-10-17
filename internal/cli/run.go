@@ -122,6 +122,7 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 	if noWait, _ := flags.GetBool("no-wait"); noWait {
 		return output.Success(deps.Stdout, map[string]any{
 			"taskId": id, "model": model, "state": "submitted", "uploaded": nonNil(uploaded),
+			"ids": result.IDs{TaskID: id},
 		})
 	}
 	timeout := timeoutFlag
@@ -364,6 +365,7 @@ func finishTask(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths
 		"taskId": a.id, "model": a.model, "state": rec.State,
 		"files": files, "result": rec.Response, "creditsConsumed": rec.CreditsConsumed,
 		"costTime": rec.CostTime, "uploaded": nonNil(a.uploaded),
+		"ids": result.Extract(a.id, rec.Response),
 	})
 }
 
