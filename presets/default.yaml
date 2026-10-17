@@ -1,0 +1,58 @@
+presets:
+  - name: imagen-rapida
+    description: Fast, cheap text-to-image (about 4 credits per image). Use for quick drafts. Missing fields - prompt.
+    model: google/imagen4-fast
+    params:
+      aspect_ratio: "1:1"
+  - name: imagen-calidad
+    description: High quality text-to-image (about 12 credits per image). Use for final renders. Missing fields - prompt.
+    model: google/imagen4-ultra
+    params:
+      aspect_ratio: "1:1"
+  - name: imagen-edicion
+    description: Edit or combine existing images from a prompt (about 4 credits). Missing fields - prompt, image_urls.
+    model: google/nano-banana-edit
+    params:
+      output_format: png
+  - name: video-calidad
+    description: High quality text-to-video, 5 seconds (about 42 credits). Missing fields - prompt.
+    model: kling/v2-5-turbo-text-to-video-pro
+    params:
+      duration: "5"
+      aspect_ratio: "16:9"
+  - name: video-imagen
+    description: Animate a still image into a 5 second video (about 42 credits). Missing fields - prompt, image_url.
+    model: kling/v2-5-turbo-image-to-video-pro
+    params:
+      duration: "5"
+  - name: video-inicio-fin
+    description: Video that interpolates between a first and a last frame (see `models price` for cost). Missing fields - prompt, image_urls (two items - start frame, end frame).
+    model: veo-3-1
+    params:
+      generation_type: FIRST_AND_LAST_FRAMES_2_VIDEO
+      model: veo3_fast
+  - name: video-barato
+    description: Cheapest text-to-video, 480p and 5 seconds (about 10 credits). Use for tests. Missing fields - prompt.
+    model: bytedance/v1-lite-text-to-video
+    params:
+      resolution: 480p
+      duration: "5"
+  - name: musica
+    description: Song with vocals generated from a description (12 credits, 2 tracks). Missing fields - prompt.
+    model: ai-music-api/generate
+    params:
+      custom_mode: false
+      instrumental: false
+      model: V5
+  - name: instrumental
+    description: Instrumental track without vocals (12 credits, 2 tracks). Missing fields - prompt.
+    model: ai-music-api/generate
+    params:
+      custom_mode: false
+      instrumental: true
+      model: V5
+  - name: voz
+    description: Multilingual text-to-speech narration (12 credits per 1000 characters). Missing fields - text.
+    model: elevenlabs/text-to-speech-multilingual-v2
+    params:
+      voice: EkK5I93UQWFDigLMpZcX
