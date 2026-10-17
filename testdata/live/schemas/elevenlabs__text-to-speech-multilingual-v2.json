@@ -1,0 +1,569 @@
+{
+  "model": "elevenlabs/text-to-speech-multilingual-v2",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "elevenlabs/text-to-speech-multilingual-v2",
+          "deprecated": false,
+          "description": "Content generation using elevenlabs/text-to-speech-multilingual-v2\n\n## Query Task Status\n\nAfter submitting a task, use the unified query endpoint to check progress and retrieve results:\n\n<Card title=\"Get Task Details\" icon=\"lucide-search\" href=\"/market/common/get-task-detail\">\n  Learn how to query task status and retrieve generation results\n</Card>\n\n::: tip[]\nFor production use, we recommend using the `callBackUrl` parameter to receive automatic notifications when generation completes, rather than polling the status endpoint.\n:::\n## Related Resources\n\n<CardGroup cols={3}>\n  <Card title=\"Market Overview\" icon=\"lucide-store\" href=\"/market/quickstart\">\n    Explore all available models\n  </Card>\n  <Card title=\"File Upload API\" icon=\"lucide-cog\" href=\"/file-upload-api/quickstart\">\n    Learn how to upload and manage files\n  </Card>\n  <Card title=\"Common API\" icon=\"lucide-webhook\" href=\"/common-api/get-account-credits\">\n    Check credits and account usage\n  </Card>\n</CardGroup>",
+          "operationId": "elevenlabs-text-to-speech-multilingual-v2",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "model",
+                    "input"
+                  ],
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "enum": [
+                        "elevenlabs/text-to-speech-multilingual-v2"
+                      ],
+                      "default": "elevenlabs/text-to-speech-multilingual-v2",
+                      "description": "The model name to use for generation. Required field.\n\n- Must be `elevenlabs/text-to-speech-multilingual-v2` for this endpoint",
+                      "examples": [
+                        "elevenlabs/text-to-speech-multilingual-v2"
+                      ]
+                    },
+                    "callBackUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "The URL to receive generation task completion updates. Optional but recommended for production use.\n\n- System will POST task status and results to this URL when generation completes\n- Callback includes generated content URLs and task information\n- Your callback endpoint should accept POST requests with JSON payload containing results\n- Alternatively, use the Get Task Details endpoint to poll task status\n- To ensure callback security, see [Webhook Verification Guide](/common-api/webhook-verification) for signature verification implementation",
+                      "examples": [
+                        "https://your-domain.com/api/callback"
+                      ]
+                    },
+                    "input": {
+                      "type": "object",
+                      "description": "Input parameters for the generation task",
+                      "properties": {
+                        "text": {
+                          "description": "The text to convert to speech (Max length: 5000 characters)",
+                          "type": "string",
+                          "maxLength": 5000,
+                          "examples": [
+                            "Unlock powerful API with Kie.ai! Affordable, scalable APl integration, free trial playground, and secure, reliable performance."
+                          ]
+                        },
+                        "voice": {
+                          "type": "string",
+                          "description": "Voice ID from the list below. You can preview a voice by opening https://static.aiquickdraw.com/elevenlabs/voice/<voice_id>.mp3 in your browser (replace <voice_id> with the actual voice ID). For example: https://static.aiquickdraw.com/elevenlabs/voice/N2lVS1w4EtoT3dr4eOWO.mp3\n\nAvailable voices:\n\nEkK5I93UQWFDigLMpZcX - James - Husky, Engaging and Bold\nZ3R5wn05IrDiVCyEkUrK - Arabella - Mysterious and Emotive\nNNl6r8mD7vthiJatiJt1 - Bradford - Expressive and Articulate\nYOq2y2Up4RgXP2HyXjE5 - Xavier - Dominating, Metallic Announcer\nB8gJV1IhpuegLxdpXFOE - Kuon - Cheerful, Clear and Steady\n2zRM7PkgwBPiau2jvVXc - Monika Sogam - Deep and Natural\n1SM7GgM6IMuvQlz2BwM3 - Mark - Casual, Relaxed and Light\n5l5f8iK3YPeGga21rQIX - Adeline - Feminine and Conversational\nscOwDtmlUjD3prqpp97I - Sam - Support Agent\nNOpBlnGInO9m6vDvFkFC - Spuds Oxley - Wise and Approachable\nBZgkqPqms7Kj9ulSkVzn - Eve - Authentic, Energetic and Happy\nwo6udizrrtpIxWGp2qJk - Northern Terry\ngU0LNdkMOQCOrPrwtbee - British Football Announcer\nDGzg6RaUqxGRTHSBjfgF - Brock - Commanding and Loud Sergeant\nx70vRnQBMBu4FAYhjJbO - Nathan - Virtual Radio Host\nSm1seazb4gs7RSlUVw7c - Anika - Animated, Friendly and Engaging\nP1bg08DkjqiVEzOn76yG - Viraj - Rich and Soft\nqDuRKMlYmrm8trt5QyBn - Taksh - Calm, Serious and Smooth\nqXpMhyvQqiRxWQs4qSSB - Horatius - Energetic Character Voice\nTX3LPaxmHKxFdv7VOQHJ - Liam - Energetic, Social Media Creator\nN2lVS1w4EtoT3dr4eOWO - Callum - Husky Trickster\nFGY2WhTYpPnrIDTdsKH5 - Laura - Enthusiast, Quirky Attitude\nkPzsL2i3teMYv0FxEYQ6 - Brittney - Social Media Voice - Fun, Youthful & Informative\nUgBBYS2sOqTuMpoF3BR0 - Mark - Natural Conversations\nhpp4J3VqNfWAUOO0d1Us - Bella - Professional, Bright, Warm\nnPczCjzI2devNBz1zQrb - Brian - Deep, Resonant and Comforting\nuYXf8XasLslADfZ2MB4u - Hope - Bubbly, Gossipy and Girly\ngs0tAILXbY5DNrJrsM6F - Jeff - Classy, Resonating and Strong\nDTKMou8ccj1ZaWGBiotd - Jamahal - Young, Vibrant, and Natural\nvBKc2FfBKJfcZNyEt1n6 - Finn - Youthful, Eager and Energetic\nDYkrAHD8iwork3YSUBbs - Tom - Conversations & Books\n56AoDkrOh6qfVPDXZ7Pt - Cassidy - Crisp, Direct and Clear\neR40ATw9ArzDf9h3v7t7 - Addison 2.0 - Australian Audiobook & Podcast\ng6xIsTj2HwM6VR4iXFCw - Jessica Anne Bogart - Chatty and Friendly\nlcMyyd2HUfFzxdCaC4Ta - Lucy - Fresh & Casual\n6aDn1KB0hjpdcocrUkmq - Tiffany - Natural and Welcoming\nSq93GQT4X1lKDXsQcixO - Felix - Warm, Positive & Contemporary RP\nflHkNRp1BlvT73UL6gyz - Jessica Anne Bogart - Eloquent Villain\n9yzdeviXkFddZ4Oz8Mok - Lutz - Chuckling, Giggly and Cheerful\npPdl9cQBQq4p6mRkZy2Z - Emma - Adorable and Upbeat\nzYcjlYFOd3taleS0gkk3 - Edward - Loud, Confident and Cocky\nnzeAacJi50IvxcyDnMXa - Marshal - Friendly, Funny Professor\nruirxsoakN0GWmGNIo04 - John Morgan - Gritty, Rugged Cowboy\nTC0Zp7WVFzhA8zpTlRqV - Aria - Sultry Villain\nljo9gAlSqKOvF6D8sOsX - Viking Bjorn - Epic Medieval Raider\nPPzYpIqttlTYA83688JI - Pirate Marshal\n8JVbfL6oEdmuxKn5DK2C - Johnny Kid - Serious and Calm Narrator\niCrDUkL56s3C8sCRl7wb - Hope - Poetic, Romantic and Captivating\nwJqPPQ618aTW29mptyoc - Ana Rita - Smooth, Expressive and Bright\nEiNlNiXeDU1pqqOPrYMO - John Doe - Deep\n4YYIPFl9wE5c4L2eu2Gb - Burt Reynolds™ - Deep, Smooth and Clear\n6F5Zhi321D3Oq7v1oNT4 - Hank - Deep and Engaging Narrator\nYXpFCvM1S3JbWEJhoskW - Wyatt - Wise Rustic Cowboy\nLG95yZDEHg6fCZdQjLqj - Phil - Explosive, Passionate Announcer\nCeNX9CMwmxDxUF5Q2Inm - Johnny Dynamite - Vintage Radio DJ\naD6riP1btT197c6dACmy - Rachel M - Pro British Radio Presenter\nmtrellq69YZsNwzUSyXh - Rex Thunder - Deep N Tough\ndHd5gvgSOzSfduK4CvEg - Ed - Late Night Announcer\neVItLK1UvXctxuaRV2Oq - Jean - Alluring and Playful Femme Fatale\nesy0r39YPLQjOczyOib8 - Britney - Calm and Calculative Villain\nTsns2HvNFKfGiNjllgqo - Sven - Emotional and Nice\n1U02n4nD6AdIZ9CjF053 - Viraj - Smooth and Gentle\nAeRdCCKzvd23BpJoofzx - Nathaniel - Engaging, British and Calm\nLruHrtVF6PSyGItzMNHS - Benjamin - Deep, Warm, Calming\n1wGbFxmAM3Fgw63G1zZJ - Allison - Calm, Soothing and Meditative\nhqfrgApggtO1785R4Fsn - Theodore HQ - Serene and Grounded\nMJ0RnG71ty4LH3dvNfSd - Leon - Soothing and Grounded",
+                          "enum": [
+                            "EkK5I93UQWFDigLMpZcX",
+                            "Z3R5wn05IrDiVCyEkUrK",
+                            "NNl6r8mD7vthiJatiJt1",
+                            "YOq2y2Up4RgXP2HyXjE5",
+                            "B8gJV1IhpuegLxdpXFOE",
+                            "2zRM7PkgwBPiau2jvVXc",
+                            "1SM7GgM6IMuvQlz2BwM3",
+                            "5l5f8iK3YPeGga21rQIX",
+                            "scOwDtmlUjD3prqpp97I",
+                            "NOpBlnGInO9m6vDvFkFC",
+                            "BZgkqPqms7Kj9ulSkVzn",
+                            "wo6udizrrtpIxWGp2qJk",
+                            "gU0LNdkMOQCOrPrwtbee",
+                            "DGzg6RaUqxGRTHSBjfgF",
+                            "x70vRnQBMBu4FAYhjJbO",
+                            "Sm1seazb4gs7RSlUVw7c",
+                            "P1bg08DkjqiVEzOn76yG",
+                            "qDuRKMlYmrm8trt5QyBn",
+                            "qXpMhyvQqiRxWQs4qSSB",
+                            "TX3LPaxmHKxFdv7VOQHJ",
+                            "N2lVS1w4EtoT3dr4eOWO",
+                            "FGY2WhTYpPnrIDTdsKH5",
+                            "kPzsL2i3teMYv0FxEYQ6",
+                            "UgBBYS2sOqTuMpoF3BR0",
+                            "hpp4J3VqNfWAUOO0d1Us",
+                            "nPczCjzI2devNBz1zQrb",
+                            "uYXf8XasLslADfZ2MB4u",
+                            "gs0tAILXbY5DNrJrsM6F",
+                            "DTKMou8ccj1ZaWGBiotd",
+                            "vBKc2FfBKJfcZNyEt1n6",
+                            "DYkrAHD8iwork3YSUBbs",
+                            "56AoDkrOh6qfVPDXZ7Pt",
+                            "eR40ATw9ArzDf9h3v7t7",
+                            "g6xIsTj2HwM6VR4iXFCw",
+                            "lcMyyd2HUfFzxdCaC4Ta",
+                            "6aDn1KB0hjpdcocrUkmq",
+                            "Sq93GQT4X1lKDXsQcixO",
+                            "flHkNRp1BlvT73UL6gyz",
+                            "9yzdeviXkFddZ4Oz8Mok",
+                            "pPdl9cQBQq4p6mRkZy2Z",
+                            "zYcjlYFOd3taleS0gkk3",
+                            "nzeAacJi50IvxcyDnMXa",
+                            "ruirxsoakN0GWmGNIo04",
+                            "TC0Zp7WVFzhA8zpTlRqV",
+                            "ljo9gAlSqKOvF6D8sOsX",
+                            "PPzYpIqttlTYA83688JI",
+                            "8JVbfL6oEdmuxKn5DK2C",
+                            "iCrDUkL56s3C8sCRl7wb",
+                            "wJqPPQ618aTW29mptyoc",
+                            "EiNlNiXeDU1pqqOPrYMO",
+                            "4YYIPFl9wE5c4L2eu2Gb",
+                            "6F5Zhi321D3Oq7v1oNT4",
+                            "YXpFCvM1S3JbWEJhoskW",
+                            "LG95yZDEHg6fCZdQjLqj",
+                            "CeNX9CMwmxDxUF5Q2Inm",
+                            "aD6riP1btT197c6dACmy",
+                            "mtrellq69YZsNwzUSyXh",
+                            "dHd5gvgSOzSfduK4CvEg",
+                            "eVItLK1UvXctxuaRV2Oq",
+                            "esy0r39YPLQjOczyOib8",
+                            "Tsns2HvNFKfGiNjllgqo",
+                            "1U02n4nD6AdIZ9CjF053",
+                            "AeRdCCKzvd23BpJoofzx",
+                            "LruHrtVF6PSyGItzMNHS",
+                            "1wGbFxmAM3Fgw63G1zZJ",
+                            "hqfrgApggtO1785R4Fsn",
+                            "MJ0RnG71ty4LH3dvNfSd"
+                          ],
+                          "default": "EkK5I93UQWFDigLMpZcX",
+                          "examples": [
+                            "EkK5I93UQWFDigLMpZcX"
+                          ]
+                        },
+                        "stability": {
+                          "description": "Voice stability (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "default": 0.5,
+                          "examples": [
+                            0.5
+                          ]
+                        },
+                        "similarity_boost": {
+                          "description": "Similarity boost (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "default": 0.75,
+                          "examples": [
+                            0.75
+                          ]
+                        },
+                        "style": {
+                          "description": "Style exaggeration (0-1) (Min: 0, Max: 1, Step: 0.01) (step: 0.01)",
+                          "type": "number",
+                          "minimum": 0,
+                          "maximum": 1,
+                          "default": 0,
+                          "examples": [
+                            0
+                          ]
+                        },
+                        "speed": {
+                          "description": "Speech speed (0.7-1.2). Values below 1.0 slow down the speech, above 1.0 speed it up. Extreme values may affect quality. (Min: 0.7, Max: 1.2, Step: 0.01) (step: 0.01)",
+                          "type": "number",
+                          "minimum": 0.7,
+                          "maximum": 1.2,
+                          "default": 1,
+                          "examples": [
+                            1
+                          ]
+                        },
+                        "timestamps": {
+                          "description": "Whether to return timestamps for each word in the generated speech (Boolean value (true/false))",
+                          "type": "boolean",
+                          "examples": [
+                            false
+                          ]
+                        },
+                        "previous_text": {
+                          "description": "The text that came before the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
+                          "type": "string",
+                          "maxLength": 5000,
+                          "examples": [
+                            ""
+                          ]
+                        },
+                        "next_text": {
+                          "description": "The text that comes after the text of the current request. Can be used to improve the speech's continuity when concatenating together multiple generations or to influence the speech's continuity in the current generation. (Max length: 5000 characters)",
+                          "type": "string",
+                          "maxLength": 5000,
+                          "examples": [
+                            ""
+                          ]
+                        },
+                        "language_code": {
+                          "description": "Language code (ISO 639-1) used to enforce a language for the model. Currently only Turbo v2.5 and Flash v2.5 support language enforcement. For other models, an error will be returned if language code is provided. (Max length: 500 characters)",
+                          "type": "string",
+                          "maxLength": 500,
+                          "examples": [
+                            ""
+                          ]
+                        }
+                      },
+                      "required": [
+                        "text",
+                        "voice"
+                      ]
+                    }
+                  }
+                },
+                "example": {
+                  "model": "elevenlabs/text-to-speech-multilingual-v2",
+                  "callBackUrl": "https://your-domain.com/api/callback",
+                  "input": {
+                    "text": "Unlock powerful API with Kie.ai! Affordable, scalable APl integration, free trial playground, and secure, reliable performance.",
+                    "voice": "EkK5I93UQWFDigLMpZcX",
+                    "stability": 0.5,
+                    "similarity_boost": 0.75,
+                    "style": 0,
+                    "speed": 1,
+                    "timestamps": false,
+                    "previous_text": "",
+                    "next_text": "",
+                    "language_code": ""
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/response%20not%20with%20recordId"
+                      }
+                    ]
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "taskId": "task_elevenlabs_1765185448724",
+                      "recordId": "elevenlabs_1765185448724"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "500": {
+              "$ref": "#/components/responses/Error",
+              "description": "Server error."
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ],
+          "callbacks": {
+            "musicTaskCompleted": {
+              "{request.body#/callBackUrl}": {
+                "post": {
+                  "description": "The system sends this callback when the audio task succeeds or fails.",
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "required": [
+                            "code",
+                            "msg",
+                            "data"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "integer",
+                              "description": "Unified callback code: 200 for success, 501 for failure.",
+                              "enum": [
+                                200,
+                                501
+                              ]
+                            },
+                            "msg": {
+                              "type": "string",
+                              "description": "Unified callback message.",
+                              "enum": [
+                                "Playground task completed successfully.",
+                                "Playground task failed."
+                              ]
+                            },
+                            "data": {
+                              "type": "object",
+                              "required": [
+                                "taskId",
+                                "model",
+                                "state",
+                                "param"
+                              ],
+                              "properties": {
+                                "taskId": {
+                                  "type": "string",
+                                  "description": "The unique task identifier."
+                                },
+                                "model": {
+                                  "type": "string",
+                                  "description": "The model used for the task.",
+                                  "enum": [
+                                    "elevenlabs/text-to-speech-multilingual-v2"
+                                  ]
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "description": "Terminal task state.",
+                                  "enum": [
+                                    "success",
+                                    "fail"
+                                  ]
+                                },
+                                "param": {
+                                  "type": "string",
+                                  "description": "JSON string containing the submitted task parameters."
+                                },
+                                "resultJson": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "JSON string containing resultUrls and resultObject when successful. Present only when state is success."
+                                },
+                                "failCode": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Failure code, a numeric string such as \"400\" or \"500\". Present only when state is fail."
+                                },
+                                "failMsg": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Failure reason. Present only when state is fail."
+                                },
+                                "costTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Processing time in seconds. Present on both success and failure callbacks."
+                                },
+                                "completeTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task completion timestamp."
+                                },
+                                "createTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task creation timestamp."
+                                },
+                                "updateTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Use completeTime as the completion time; updateTime may equal createTime."
+                                },
+                                "creditsConsumed": {
+                                  "type": "number",
+                                  "description": "Credits consumed by the task; 0 for failed tasks."
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "examples": {
+                          "success": {
+                            "summary": "Task completed successfully",
+                            "value": {
+                              "code": 200,
+                              "msg": "Playground task completed successfully.",
+                              "data": {
+                                "taskId": "task_example_music_webhook_001",
+                                "model": "elevenlabs/text-to-speech-multilingual-v2",
+                                "state": "success",
+                                "param": "{\"input\":\"{\\\"text\\\":\\\"Unlock powerful API with Kie.ai! Affordable, scalable APl integration, free trial playground, and secure, reliable pe...\\\",\\\"voice\\\":\\\"Rachel\\\",\\\"stability\\\":0.5,\\\"similarity_boost\\\":0.75,\\\"style\\\":0,\\\"speed\\\":1,\\\"timestamps\\\":false,\\\"previous_text\\\":\\\"\\\",\\\"next_text\\\":\\\"\\\",\\\"language_code\\\":\\\"\\\"}\",\"callBackUrl\":\"https://example.com/callback\",\"model\":\"elevenlabs/text-to-speech-multilingual-v2\"}",
+                                "resultJson": "{\"resultUrls\":[\"https://example.com/generated-audio.mp3\"],\"resultObject\":null}",
+                                "costTime": 12,
+                                "completeTime": 1234567890,
+                                "createTime": 1234560000,
+                                "updateTime": 1234567890,
+                                "creditsConsumed": 1.23
+                              }
+                            }
+                          },
+                          "failure": {
+                            "summary": "Task failed",
+                            "value": {
+                              "code": 501,
+                              "msg": "Playground task failed.",
+                              "data": {
+                                "taskId": "task_example_music_webhook_001",
+                                "model": "elevenlabs/text-to-speech-multilingual-v2",
+                                "state": "fail",
+                                "param": "{\"input\":\"{\\\"text\\\":\\\"Unlock powerful API with Kie.ai! Affordable, scalable APl integration, free trial playground, and secure, reliable pe...\\\",\\\"voice\\\":\\\"Rachel\\\",\\\"stability\\\":0.5,\\\"similarity_boost\\\":0.75,\\\"style\\\":0,\\\"speed\\\":1,\\\"timestamps\\\":false,\\\"previous_text\\\":\\\"\\\",\\\"next_text\\\":\\\"\\\",\\\"language_code\\\":\\\"\\\"}\",\"callBackUrl\":\"https://example.com/callback\",\"model\":\"elevenlabs/text-to-speech-multilingual-v2\"}",
+                                "failCode": "400",
+                                "failMsg": "<error detail>",
+                                "costTime": 12,
+                                "creditsConsumed": 0
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Callback received successfully.",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "integer",
+                                "example": 200
+                              },
+                              "msg": {
+                                "type": "string",
+                                "example": "success"
+                              }
+                            }
+                          },
+                          "example": {
+                            "code": 200,
+                            "msg": "success"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {
+        "response not with recordId": {
+          "type": "object",
+          "required": [
+            "data"
+          ],
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+              "enum": [
+                200,
+                401,
+                402,
+                404,
+                422,
+                429,
+                433,
+                455,
+                500,
+                501,
+                505
+              ]
+            },
+            "msg": {
+              "type": "string",
+              "description": "Response message, error description upon failure",
+              "examples": [
+                "success"
+              ]
+            },
+            "data": {
+              "type": "object",
+              "required": [
+                "taskId"
+              ],
+              "properties": {
+                "taskId": {
+                  "type": "string",
+                  "description": "The task ID can be used with the \"Get Task Details\" endpoint to query the task status.",
+                  "examples": [
+                    "dc1928bfcbc77cb6c85f3359a9c718b3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "Error": {
+          "description": "Server error.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **401**: Unauthorized - Authentication credentials are missing or invalid\n- **402**: Insufficient Credits - Account does not have enough credits to perform the operation\n- **404**: Not Found - The requested resource or endpoint does not exist\n- **408**: Timeout - No result has been returned for over 10 minutes.\n- **422**: Validation Error - The request parameters failed validation checks\n- **429**: Rate Limited - Request limit has been exceeded for this resource\n- **455**: Service Unavailable - System is currently undergoing maintenance\n- **500**: Server Error - An unexpected error occurred while processing the request\n- **501**: Generation Failed - Content generation task failed\n- **505**: Feature Disabled - The requested feature is currently disabled"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "description": "Response message, error description when failed"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              },
+              "examples": {
+                "Example 1": {
+                  "summary": "Example 1",
+                  "value": {
+                    "code": 500,
+                    "msg": "Server Error - An unexpected error occurred while processing the request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

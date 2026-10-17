@@ -1,0 +1,393 @@
+{
+  "model": "flux1-kontext",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "Generate or Edit Image",
+          "deprecated": false,
+          "description": ":::warning\nThis is the new version of the API documentation; for the old version of the API, please see [https://docs.kie.ai/old-model/flux-kontext-api/generate-or-edit-image](https://docs.kie.ai/old-model/flux-kontext-api/generate-or-edit-image).\n:::\nCreate a new image generation or editing task using the Flux Kontext AI model.\n\n### Usage Modes\n1. **Text-to-Image Generation**\n   - Provide `prompt` and `aspect_ratio`\n   - Model will generate a new image based on the text description\n\n2. **Image Editing**\n   - Provide `prompt` and `input_image`\n   - You can optionally provide an `aspect_ratio`.  \n      - If supplied, the output will be cropped or padded to match this ratio.  \n      - If omitted, the original image's ratio will be preserved.\n   - Model will edit the input image according to the prompt\n\n### Important Notes\n- Generated images will expire after 14 days\n- Prompts only support English\n- Use input.model to choose flux-kontext-pro or flux-kontext-max:\n  - flux-kontext-pro: Standard model for most use cases\n  - flux-kontext-max: Enhanced model for complex scenes\n",
+          "operationId": "generate-or-edit-image",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "examples": [
+                    {
+                      "callBackUrl": "https://your-domain.com/api/callback",
+                      "input": {
+                        "aspect_ratio": "16:9",
+                        "enable_translation": true,
+                        "output_format": "jpeg",
+                        "prompt": "A serene mountain landscape at sunset with a lake reflecting the orange sky",
+                        "prompt_upsampling": false
+                      },
+                      "model": "flux1-kontext"
+                    }
+                  ],
+                  "properties": {
+                    "model": {
+                      "default": "flux1-kontext",
+                      "description": "Model version to use for generation.",
+                      "enum": [
+                        "flux1-kontext"
+                      ],
+                      "type": "string"
+                    },
+                    "callBackUrl": {
+                      "description": "The URL to receive image generation or editing task completion updates. Optional but recommended for production use.\n\n- System will POST task status and results to this URL when image generation or editing completes\n- Callback includes generated image URLs and task information for both text-to-image and image editing operations\n- Your callback endpoint should accept POST requests with JSON payload containing image results\n- For detailed callback format and implementation guide, see [Image Generation/Editing Callbacks](https://docs.kie.ai/flux-kontext-api/generate-or-edit-image-callbacks)\n- Alternatively, use [Get Task Details](/market/common/get-task-detail) to poll task status\n- To ensure callback security, see [Webhook Verification Guide](/common-api/webhook-verification) for signature verification implementation",
+                      "examples": [
+                        "https://your-domain.com/api/callback"
+                      ],
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "input": {
+                      "properties": {
+                        "prompt": {
+                          "description": "Text prompt describing the desired image or edit. Required for both generation and editing modes.\n\n- Should be detailed and specific\n- For image editing, describe the desired changes\n- For image generation, describe the complete scene\n- IMPORTANT: Only English language is supported",
+                          "examples": [
+                            "A serene mountain landscape at sunset with a lake reflecting the orange sky"
+                          ],
+                          "type": "string"
+                        },
+                        "model": {
+                          "type": "string",
+                          "enum": [
+                            "flux-kontext-pro",
+                            "flux-kontext-max"
+                          ],
+                          "default": "flux-kontext-pro",
+                          "examples": [
+                            "flux-kontext-pro"
+                          ],
+                          "description": "Model tier: flux-kontext-pro (default) or flux-kontext-max (higher quality, higher price)."
+                        },
+                        "enable_translation": {
+                          "description": "Whether to enable automatic translation feature.\n\n- Since prompt only supports English, when this parameter is true, the system will automatically translate non-English prompts to English\n- If your prompt is already in English, you can set this to false\n- Default value: true",
+                          "examples": [
+                            true
+                          ],
+                          "type": "boolean"
+                        },
+                        "upload_cn": {
+                          "description": "(Optional) Specifies the server region for image upload. Set to true to use servers in China, false to use non-China servers. Choose based on your geographical location for optimal upload speeds.",
+                          "examples": [
+                            false
+                          ],
+                          "type": "boolean"
+                        },
+                        "input_image": {
+                          "description": "URL of the input image for editing mode. Required when editing an existing image.\n\n- Must be a valid image URL\n- Image must be accessible to the API server",
+                          "examples": [
+                            "https://example.com/input-image.jpg"
+                          ],
+                          "format": "uri",
+                          "type": "string"
+                        },
+                        "aspect_ratio": {
+                          "description": "Output image aspect ratio. You Applicable in both text-to-image generation and image editing modes.\n\nFor **text-to-image generation** , the output image will follow the specified aspect ratio.\n\nFor **image editing** , if aspect_ratio is provided, the edited image will follow that ratio. If not provided, the image will retain its original aspect ratio.\n\nSupported Aspect Ratios:\n\n| Ratio | Format Type | Common Use Cases |\n|-------|-------------|-----------------|\n| 21:9  | Ultra-wide  | Cinematic displays, panoramic views |\n| 16:9  | Widescreen  | HD video, desktop wallpapers |\n| 4:3   | Standard    | Traditional displays, presentations |\n| 1:1   | Square      | Social media posts, profile pictures |\n| 3:4   | Portrait    | Magazine layouts, portrait photos |\n| 9:16  | Mobile Portrait | Smartphone wallpapers, stories |\n\nSet this field explicitly to get a specific ratio.",
+                          "enum": [
+                            "21:9",
+                            "16:9",
+                            "4:3",
+                            "1:1",
+                            "3:4",
+                            "9:16"
+                          ],
+                          "type": "string"
+                        },
+                        "output_format": {
+                          "default": "jpeg",
+                          "description": "Output image format.",
+                          "enum": [
+                            "jpeg",
+                            "png"
+                          ],
+                          "type": "string"
+                        },
+                        "prompt_upsampling": {
+                          "default": false,
+                          "description": "- If true, performs upsampling on the prompt\n- May increase processing time",
+                          "type": "boolean"
+                        },
+                        "safety_tolerance": {
+                          "default": 2,
+                          "description": "**For Image Generation Mode:**\nModeration level for inputs and outputs. Value ranges from 0 (most strict) to 6 (more permissive).\n\n**For Image Editing Mode:**\nModeration level for inputs and outputs. Value ranges from 0 (most strict) to 2 (balanced).\n\nDefault: 2",
+                          "enum": [
+                            0,
+                            1,
+                            2,
+                            3,
+                            4,
+                            5,
+                            6
+                          ],
+                          "examples": [
+                            2
+                          ],
+                          "type": "integer"
+                        },
+                        "watermark": {
+                          "description": "Watermark identifier to add to the generated image.\n\n- Optional\n- If provided, a watermark will be added to the output image",
+                          "examples": [
+                            "your-watermark-id"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "prompt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "model",
+                    "input"
+                  ],
+                  "type": "object"
+                },
+                "example": {
+                  "model": "flux1-kontext",
+                  "callBackUrl": "https://your-domain.com/api/callback",
+                  "input": {
+                    "prompt": "A serene mountain landscape at sunset with a lake reflecting the orange sky",
+                    "enable_translation": true,
+                    "aspect_ratio": "16:9",
+                    "output_format": "jpeg",
+                    "prompt_upsampling": false
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "properties": {
+                          "code": {
+                            "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+                            "enum": [
+                              200,
+                              401,
+                              402,
+                              404,
+                              422,
+                              429,
+                              455,
+                              500,
+                              501,
+                              505
+                            ],
+                            "type": "integer"
+                          },
+                          "msg": {
+                            "description": "Error message when code != 200",
+                            "examples": [
+                              "success"
+                            ],
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      {
+                        "properties": {
+                          "data": {
+                            "properties": {
+                              "taskId": {
+                                "description": "Task ID, can be used with [Get Task Details](/market/common/get-task-detail) to query task status",
+                                "examples": [
+                                  "task12345"
+                                ],
+                                "type": "string"
+                              }
+                            },
+                            "type": "object"
+                          }
+                        },
+                        "type": "object"
+                      }
+                    ]
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "taskId": "task12345"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "500": {
+              "$ref": "#/components/responses/Error",
+              "description": "Server error."
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ],
+          "callbacks": {
+            "onImageGenerated": {
+              "{$request.body#/callBackUrl}": {
+                "post": {
+                  "summary": "Image Generation Callback",
+                  "description": "When the image generation task is completed, the system will send the result to your provided callback URL via POST request",
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "integer",
+                              "description": "Status code\n\n- **200**: Success - Image generation completed successfully\n- **400**: Failed - Your prompt was flagged by Website as violating content policies.\n- **500**: Failed - Internal Error, Please try again later.\n- **501**: Failed - Image generation task failed",
+                              "enum": [
+                                200,
+                                400,
+                                500,
+                                501
+                              ]
+                            },
+                            "msg": {
+                              "type": "string",
+                              "description": "Status message",
+                              "example": "Image generated successfully."
+                            },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "taskId": {
+                                  "type": "string",
+                                  "description": "Task ID",
+                                  "example": "task12345"
+                                },
+                                "info": {
+                                  "type": "object",
+                                  "properties": {
+                                    "resultImageUrl": {
+                                      "type": "string",
+                                      "description": "Generated image URL on our server",
+                                      "example": "https://example.com/result.jpg"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "example": {
+                          "code": 200,
+                          "msg": "Image generated successfully.",
+                          "data": {
+                            "taskId": "task12345",
+                            "info": {
+                              "resultImageUrl": "https://example.com/result.jpg"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Callback received successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {},
+      "responses": {
+        "Error": {
+          "description": "Server error.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **401**: Unauthorized - Authentication credentials are missing or invalid\n- **402**: Insufficient Credits - Account does not have enough credits to perform the operation\n- **404**: Not Found - The requested resource or endpoint does not exist\n- **408**: Timeout - No result has been returned for over 10 minutes.\n- **422**: Validation Error - The request parameters failed validation checks\n- **429**: Rate Limited - Request limit has been exceeded for this resource\n- **455**: Service Unavailable - System is currently undergoing maintenance\n- **500**: Server Error - An unexpected error occurred while processing the request\n- **501**: Generation Failed - Content generation task failed\n- **505**: Feature Disabled - The requested feature is currently disabled"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "description": "Response message, error description when failed"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              },
+              "examples": {
+                "Example 1": {
+                  "summary": "Example 1",
+                  "value": {
+                    "code": 500,
+                    "msg": "Server Error - An unexpected error occurred while processing the request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

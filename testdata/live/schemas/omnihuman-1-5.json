@@ -1,0 +1,458 @@
+{
+  "model": "omnihuman-1-5",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "Omnihuman 1.5",
+          "deprecated": false,
+          "description": "## Create Task\n\nUse this endpoint to create a new audio-driven portrait animation task. Upload a portrait image and an audio file, and the model will generate a video of the subject speaking or moving in sync with the audio.\n\n<Card title=\"Get Task Details\" icon=\"lucide-search\" href=\"/market/common/get-task-detail\">\n  After submission, use the unified query endpoint to check task progress and retrieve results\n</Card>\n\n::: tip[]\nFor production use, we recommend providing the `callBackUrl` parameter so your service can receive completion notifications instead of polling for task status.\n:::\n\n## File Upload\n\n::: tip[]\nNeed to upload files before calling this endpoint? See [File Upload API Quickstart](/file-upload-api/quickstart).\n:::\n\n## Related Resources\n\n<CardGroup cols={2}>\n  <Card title=\"Model Marketplace\" icon=\"lucide-store\" href=\"/market/quickstart\">\n    Explore all available models and capabilities\n  </Card>\n  <Card title=\"Common API\" icon=\"lucide-cog\" href=\"/common-api/get-account-credits\">\n    Check account credits and usage\n  </Card>\n</CardGroup>",
+          "operationId": "omnihuman-1-5",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "model",
+                    "input"
+                  ],
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "enum": [
+                        "omnihuman-1-5"
+                      ],
+                      "default": "omnihuman-1-5",
+                      "description": "The model name used for generation. This field is required.\n\n- This endpoint must use the `omnihuman-1-5` model",
+                      "examples": [
+                        "omnihuman-1-5"
+                      ]
+                    },
+                    "input": {
+                      "type": "object",
+                      "description": "Input parameters for the audio-driven portrait animation task.",
+                      "required": [
+                        "image_url",
+                        "audio_url"
+                      ],
+                      "properties": {
+                        "image_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "description": "Portrait image URL. Supports any aspect ratio with subjects including people, pets, anime, etc. Accepted file types: image/jpeg, image/png, image/webp. Max file size: 10MB."
+                        },
+                        "mask_url": {
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                            "format": "uri"
+                          },
+                          "maxItems": 5,
+                          "description": "Optional mask image URL(s). To have a specific subject in the image speak, use 'Subject Detection' to get the corresponding mask image and pass it as input. Accepted file types: image/jpeg, image/png, image/webp. Max file size: 10MB. Multiple file upload is supported, up to 5 files."
+                        },
+                        "audio_url": {
+                          "type": "string",
+                          "format": "uri",
+                          "description": "Audio URL. Duration must be less than 60 seconds (recommended 15 seconds or less; exceeding this will cause quality degradation). Accepted file types: audio/mpeg, audio/wav, audio/x-wav, audio/aac, audio/ogg, audio/mp4. Max file size: 10MB."
+                        },
+                        "prompt": {
+                          "type": "string",
+                          "description": "Optional. Supported languages: Chinese, English, Japanese, Korean, Spanish, Indonesian. Up to 300 characters.",
+                          "maxLength": 300
+                        },
+                        "output_resolution": {
+                          "type": "string",
+                          "enum": [
+                            "720",
+                            "1080"
+                          ],
+                          "default": "1080",
+                          "description": "Output video resolution.\n\n- `720`: 720P\n- `1080`: 1080P (default)\n\nThe output keeps the aspect ratio of the input image; 720 and 1080 are resolution tiers, not exact heights. The output is an MP4 as long as the audio."
+                        },
+                        "pe_fast_mode": {
+                          "type": "boolean",
+                          "default": false,
+                          "description": "Fast mode. Sacrifices some quality to speed up generation. Default value: `false`."
+                        },
+                        "seed": {
+                          "type": "integer",
+                          "default": -1,
+                          "description": "Random seed. Default is `-1` (random). When using the same positive integer and keeping all other parameters identical, the result will be highly consistent."
+                        }
+                      }
+                    },
+                    "callBackUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "Callback URL. Once the task is fully completed, kie will send the result to the business webhook URL. To verify callbacks, see [Webhook Verification Guide](/common-api/webhook-verification)."
+                    }
+                  }
+                },
+                "example": {
+                  "model": "omnihuman-1-5",
+                  "input": {
+                    "image_url": "https://your-domain.com/image/portrait.png",
+                    "mask_url": [
+                      "https://your-domain.com/image/mask.png"
+                    ],
+                    "audio_url": "https://your-domain.com/audio/speech.mp3",
+                    "prompt": "A person speaking naturally with gentle expressions.",
+                    "output_resolution": "1080",
+                    "pe_fast_mode": false,
+                    "seed": -1
+                  },
+                  "callBackUrl": "https://your-domain.com/api/callback"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "integer",
+                            "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+                            "enum": [
+                              200,
+                              401,
+                              402,
+                              404,
+                              422,
+                              429,
+                              433,
+                              455,
+                              500,
+                              501,
+                              505
+                            ]
+                          },
+                          "msg": {
+                            "type": "string",
+                            "description": "Response message, error description upon failure",
+                            "examples": [
+                              "success"
+                            ]
+                          },
+                          "data": {
+                            "type": "object",
+                            "required": [
+                              "taskId"
+                            ],
+                            "properties": {
+                              "taskId": {
+                                "type": "string",
+                                "description": "The task ID can be used with the \"Get Task Details\" endpoint to query the task status.",
+                                "examples": [
+                                  "dc1928bfcbc77cb6c85f3359a9c718b3"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "data"
+                        ]
+                      }
+                    ]
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "taskId": "task_omnihuman-1-5_1234567890"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            }
+          },
+          "security": [
+            {
+              "BearerAuth1": []
+            }
+          ],
+          "callbacks": {
+            "videoTaskCompleted": {
+              "{request.body#/callBackUrl}": {
+                "post": {
+                  "description": "The system sends this callback when the `omnihuman-1-5` task succeeds or fails.",
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "required": [
+                            "code",
+                            "msg",
+                            "data"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "integer",
+                              "description": "Unified callback code: 200 for success, 501 for failure.",
+                              "enum": [
+                                200,
+                                501
+                              ]
+                            },
+                            "msg": {
+                              "type": "string",
+                              "description": "Unified callback message.",
+                              "enum": [
+                                "Playground task completed successfully.",
+                                "Playground task failed."
+                              ]
+                            },
+                            "data": {
+                              "type": "object",
+                              "required": [
+                                "taskId",
+                                "model",
+                                "state",
+                                "param"
+                              ],
+                              "properties": {
+                                "taskId": {
+                                  "type": "string",
+                                  "description": "The unique task identifier."
+                                },
+                                "model": {
+                                  "type": "string",
+                                  "description": "The model used for the task.",
+                                  "enum": [
+                                    "omnihuman-1-5"
+                                  ]
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "description": "Terminal task state.",
+                                  "enum": [
+                                    "success",
+                                    "fail"
+                                  ]
+                                },
+                                "param": {
+                                  "type": "string",
+                                  "description": "JSON string containing the submitted task parameters."
+                                },
+                                "resultJson": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "JSON string containing resultUrls, firstFrameUrl, lastFrameUrl, or resultObject when successful. Present only when state is success."
+                                },
+                                "failCode": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Failure code, a numeric string such as \"400\" or \"500\". Present only when state is fail."
+                                },
+                                "failMsg": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Failure reason. Present only when state is fail."
+                                },
+                                "costTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Processing time in seconds. Present on both success and failure callbacks."
+                                },
+                                "completeTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task completion timestamp."
+                                },
+                                "createTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task creation timestamp."
+                                },
+                                "updateTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Use completeTime as the completion time; updateTime may equal createTime."
+                                },
+                                "creditsConsumed": {
+                                  "type": "number",
+                                  "description": "Credits consumed by the task; 0 for failed tasks."
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "examples": {
+                          "success": {
+                            "summary": "Task completed successfully",
+                            "value": {
+                              "code": 200,
+                              "msg": "Playground task completed successfully.",
+                              "data": {
+                                "taskId": "task_example_video_webhook_001",
+                                "model": "omnihuman-1-5",
+                                "state": "success",
+                                "param": "{\"input\":\"{\\\"image_url\\\":\\\"https://example.com/input-image.jpg\\\",\\\"mask_url\\\":[\\\"https://example.com/input-image.jpg\\\"],\\\"audio_url\\\":\\\"https://example.com/input-audio.mp3\\\",\\\"prompt\\\":\\\"A person speaking naturally with gentle expressions.\\\",\\\"output_resolution\\\":\\\"1080\\\",\\\"pe_fast_mode\\\":false,\\\"seed\\\":-1}\",\"callBackUrl\":\"https://example.com/callback\",\"model\":\"omnihuman-1-5\"}",
+                                "resultJson": "{\"resultUrls\":[\"https://example.com/generated-video.mp4\"]}",
+                                "costTime": 12,
+                                "completeTime": 1234567890,
+                                "createTime": 1234560000,
+                                "updateTime": 1234567890,
+                                "creditsConsumed": 1.23
+                              }
+                            }
+                          },
+                          "failure": {
+                            "summary": "Task failed",
+                            "value": {
+                              "code": 501,
+                              "msg": "Playground task failed.",
+                              "data": {
+                                "taskId": "task_example_video_webhook_001",
+                                "model": "omnihuman-1-5",
+                                "state": "fail",
+                                "param": "{\"input\":\"{\\\"image_url\\\":\\\"https://example.com/input-image.jpg\\\",\\\"mask_url\\\":[\\\"https://example.com/input-image.jpg\\\"],\\\"audio_url\\\":\\\"https://example.com/input-audio.mp3\\\",\\\"prompt\\\":\\\"A person speaking naturally with gentle expressions.\\\",\\\"output_resolution\\\":\\\"1080\\\",\\\"pe_fast_mode\\\":false,\\\"seed\\\":-1}\",\"callBackUrl\":\"https://example.com/callback\",\"model\":\"omnihuman-1-5\"}",
+                                "failCode": "400",
+                                "failMsg": "<error detail>",
+                                "costTime": 12,
+                                "creditsConsumed": 0
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Callback received successfully.",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "integer",
+                                "example": 200
+                              },
+                              "msg": {
+                                "type": "string",
+                                "example": "success"
+                              }
+                            }
+                          },
+                          "example": {
+                            "code": 200,
+                            "msg": "success"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {
+        "response not with recordId": {
+          "type": "object",
+          "required": [
+            "data"
+          ],
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+              "enum": [
+                200,
+                401,
+                402,
+                404,
+                422,
+                429,
+                433,
+                455,
+                500,
+                501,
+                505
+              ]
+            },
+            "msg": {
+              "type": "string",
+              "description": "Response message, error description upon failure",
+              "examples": [
+                "success"
+              ]
+            },
+            "data": {
+              "type": "object",
+              "required": [
+                "taskId"
+              ],
+              "properties": {
+                "taskId": {
+                  "type": "string",
+                  "description": "The task ID can be used with the \"Get Task Details\" endpoint to query the task status.",
+                  "examples": [
+                    "dc1928bfcbc77cb6c85f3359a9c718b3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {},
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        },
+        "BearerAuth1": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "所有 API 请求都需要 Bearer Token。请在请求头中添加 `Authorization: Bearer YOUR_API_KEY` 进行身份验证。"
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

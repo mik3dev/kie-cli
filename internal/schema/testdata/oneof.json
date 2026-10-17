@@ -1,0 +1,60 @@
+{
+ "model": "x/oneof",
+ "openapi": {
+  "paths": {
+   "/api/v1/jobs/createTask": {
+    "post": {
+     "requestBody": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "properties": {
+          "model": {
+           "type": "string"
+          },
+          "input": {
+           "type": "object",
+           "required": [
+            "prompt"
+           ],
+           "properties": {
+            "prompt": {
+             "type": "string"
+            }
+           },
+           "oneOf": [
+            {
+             "required": [
+              "a"
+             ],
+             "properties": {
+              "a": {
+               "type": "string"
+              }
+             }
+            },
+            {
+             "required": [
+              "b"
+             ],
+             "properties": {
+              "b": {
+               "type": "integer",
+               "minimum": 1,
+               "maximum": 5
+              }
+             }
+            }
+           ]
+          }
+         }
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ }
+}

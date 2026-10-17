@@ -1,0 +1,601 @@
+{
+  "model": "gemini-2.5-pro",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/gemini-2.5-pro/v1/chat/completions": {
+        "post": {
+          "summary": "Gemini  2.5 Pro (openai)",
+          "deprecated": false,
+          "description": ":::warning\n**⚠️ Chat only**\n\nThis model currently supports chat requests only and has not yet been adapted for agent use. Connecting it to an agent may cause request errors or unexpected results.\n:::\n\n### Streaming Support\n\nWhen `stream: true` is set in the request, the API returns responses as server-sent events (SSE) with `Content-Type: text/event-stream`. This allows for progressive response delivery, where message deltas are sent incrementally as they are generated. Each event contains partial message content, enabling real-time display of responses in your application.\n\n**Streaming Response Format:**\n- Content-Type: `text/event-stream`\n- Each event line starts with `data: ` followed by JSON\n- Events contain incremental message deltas\n- Final event indicates completion with `finish_reason`\n- The stream ends with a chunk carrying usage and credits_consumed, followed by data: [DONE].\n\n<CardGroup cols={2}>\n  <Card title=\"Multimodal\" icon=\"lucide-image\">\n    Text, image, video, audio and PDF input\n  </Card>\n  <Card title=\"Real-time Search\" icon=\"lucide-search\">\n    Google Search grounding enabled\n  </Card>\n  <Card title=\"Streaming\" icon=\"lucide-list-minus\">\n    Server-sent events support\n  </Card>\n  <Card title=\"Flexible Roles\" icon=\"lucide-users\">\n    Multiple message roles supported\n  </Card>\n</CardGroup>\n\n\n<div style=\"padding: 20px; background-color: rgba(255, 152, 0, 0.05); border: 1px solid rgba(255, 152, 0, 0.15); border-left: 6px solid #ff9800; border-radius: 10px; margin: 25px 0;\">\n  <div style=\"display: flex; align-items: center; margin-bottom: 12px;\">\n    <span style=\"font-size: 22px; margin-right: 10px;\">⚠️</span>\n    <strong style=\"color: #e65100; font-size: 17px;\">Important: Unified Media Structure</strong>\n  </div>\n\n  <p style=\"color: #444; margin-bottom: 15px; line-height: 1.6; font-size: 14px;\">\n    To simplify integration, <b>all media types</b> (Images, Videos, Audio, or Documents) in the <code>messages</code> array share the <b>exact same JSON structure</b>:\n  </p>\n\n  <ul style=\"color: #555; line-height: 1.8; margin-bottom: 15px; font-size: 14px;\">\n    <li>The <code>type</code> field is <b>fixed</b> as <code>\"image_url\"</code></li>\n    <li>The <code>image_url</code> key name <b>remains unchanged</b> for all file types</li>\n    <li>Only the <code>url</code> value points to your specific media file</li>\n  </ul>\n\n  <div style=\"background-color: #fdfdfd; padding: 12px; border-radius: 6px; border: 1px solid #eee; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; color: #d32f2f;\">\n    <span style=\"color: #888; font-style: italic;\">// Example for Video/Audio/PDF/Image:</span><br>\n    { \"type\": \"image_url\", \"image_url\": { \"url\": \"https://...\" } }\n  </div>\n</div>\n\n## Tools Parameter\n\nThe `tools` parameter is an optional array that allows you to define functions the model can call. The array can contain multiple objects. When using function calling, you can define multiple functions in the array.\n\n<AccordionGroup>\n<Accordion title=\"Google Search\">\nUse this format to enable Google Search grounding:\n\n```json\n{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"googleSearch\"\n  }\n}\n```\n\nThis enables real-time information retrieval via Google Search.\n</Accordion>\n\n<Accordion title=\"Function Calling\">\nDefine your own functions with parameters. You can define multiple functions in the `tools` array:\n\n```json\n[\n  {\n    \"type\": \"function\",\n    \"function\": {\n      \"name\": \"get_current_weather\",\n      \"description\": \"Get the current weather in a given location\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"location\": {\n            \"type\": \"string\",\n            \"description\": \"The city and state, e.g. San Francisco, CA\"\n          },\n          \"unit\": {\n            \"type\": \"string\",\n            \"enum\": [\"celsius\", \"fahrenheit\"]\n          }\n        },\n        \"required\": [\"location\"]\n      }\n    }\n  },\n  {\n    \"type\": \"function\",\n    \"function\": {\n      \"name\": \"get_stock_price\",\n      \"description\": \"Get the current stock price for a given symbol\",\n      \"parameters\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"symbol\": {\n            \"type\": \"string\",\n            \"description\": \"The stock symbol, e.g. AAPL\"\n          }\n        },\n        \"required\": [\"symbol\"]\n      }\n    }\n  }\n]\n```\n\n### Function Declaration Requirements\n\nWhen implementing function calling in your prompt, you need to create a `tools` array containing one or more function declarations. You can define functions using JSON (specifically, a selected subset of OpenAPI schema format).\n\nA single function declaration can include the following parameters:\n\n- **`name`** (string, required): The unique name of the function (e.g., `get_weather_forecast`, `send_email`). Use descriptive names without spaces or special characters (use underscores or camelCase).\n\n- **`description`** (string, optional but recommended): A clear and detailed description of what the function does and its purpose. This is crucial for the model to understand when to use the function. Be specific and provide examples when necessary (e.g., \"Find movie theaters by location, with an option to also find movies currently showing at those theaters.\").\n\n- **`parameters`** (object, required): Defines the input parameters expected by the function. Contains:\n  - **`type`** (string): Specifies the overall data type, must be `\"object\"`.\n  - **`properties`** (object): Lists individual parameters, each with:\n    - **`type`** (string): The parameter's data type, such as `string`, `integer`, `boolean`, `array`.\n    - **`description`** (string): Description of the parameter's purpose and format. Provide examples and constraints (e.g., \"City and state, e.g. 'San Francisco, CA' or a postal code like '95616'.\").\n    - **`enum`** (array, optional): If parameter values come from a fixed set, use `enum` to list allowed values rather than just describing them in the description. This helps improve accuracy (e.g., `\"enum\": [\"daylight\", \"cool\", \"warm\"]`).\n  - **`required`** (array): An array of strings listing the parameter names required for the function to run.\n</Accordion>\n</AccordionGroup>\n\n## Response Format Parameter\n\nThe `response_format` parameter is an optional JSON Schema object that defines the structure of the response. When provided, the model will generate responses that conform to this schema.\n\n<AccordionGroup>\n<Accordion title=\"JSON Schema Support\">\nThe `response_format` follows the JSON Schema specification. Supported types include:\n\n- **`string`**: For text values\n- **`number`**: For floating-point numbers\n- **`integer`**: For whole numbers\n- **`boolean`**: For true/false values\n- **`object`**: For structured data with key-value pairs\n- **`array`**: For lists of items\n- **`null`**: To allow null values, add `\"null\"` to the type array (e.g., `{\"type\": [\"string\", \"null\"]}`)\n\n#### Type-Specific Properties\n\n**For `object` values:**\n- `properties`: Object mapping property names to their schema definitions\n- `required`: Array of required property names\n- `additionalProperties`: Controls whether properties not in `properties` are allowed\n\n**For `string` values:**\n- `enum`: List of specific possible string values for classification\n- `format`: Specifies string syntax (e.g., `date-time`, `date`, `time`)\n\n**For `number` and `integer` values:**\n- `enum`: List of specific possible numeric values\n- `minimum`: Inclusive minimum value\n- `maximum`: Inclusive maximum value\n\n**For `array` values:**\n- `items`: Schema definition for all array elements\n- `prefixItems`: List of schemas for the first N items (tuple-like structures)\n- `minItems`: Minimum number of items in the array\n- `maxItems`: Maximum number of items in the array\n</Accordion>\n\n<Accordion title=\"Example\">\n```json\n{\n  \"response_format\": {\n    \"type\": \"json_schema\",\n    \"json_schema\": {\n      \"name\": \"structured_output\",\n      \"strict\": true,\n      \"schema\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"response\": {\n            \"type\": \"string\"\n          }\n        },\n        \"required\": [\n          \"response\"\n        ]\n      }\n    }\n  }\n}\n```\n\n`{\"type\":\"json_object\"}` is also supported.\n</Accordion>\n\n<Accordion title=\"Best Practices\">\n- **Clear descriptions**: Use the `description` field in the schema to clearly explain what each property means\n- **Strong typing**: Use specific types (`integer`, `string`, `enum`) whenever possible\n- **Prompt engineering**: Clearly state in your prompt what you want the model to extract or structure\n- **Validation**: While structured output ensures JSON is syntactically correct, always validate the semantic correctness of values in your application code\n</Accordion>\n</AccordionGroup>\n\n## Error Responses\n\nErrors are returned with HTTP 200 and a JSON body {\"code\": <int>, \"msg\": \"<reason>\"}. Check code (200 = success) before reading choices/candidates.",
+          "operationId": "gemini-2.5-pro-chat-completions",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "description": "An array of message objects. Each message has a role and content.\n\n**Unified Media File Format:**\n\nIn the content array, whether it's images, videos, audio, or other document types, all media files use the same format structure:\n\n- The `type` field is always `\"image_url\"`\n- The `image_url` field name remains unchanged\n- The only thing that changes is the `url` value, which points to the corresponding media file address\n\nFor example: images, videos, audio, PDFs, and other documents all use the same `{ type: 'image_url', image_url: { url: '...' } }` structure.",
+                      "items": {
+                        "$ref": "#/components/schemas/Message"
+                      },
+                      "minItems": 1
+                    },
+                    "stream": {
+                      "type": "boolean",
+                      "default": false,
+                      "description": "Default is false. Set to true to receive server-sent events."
+                    },
+                    "tools": {
+                      "type": "array",
+                      "description": "An optional array of tools the model may call. The array can contain multiple objects. Supports two formats:\n\n1. **Google Search**: `{\"type\": \"function\", \"function\": {\"name\": \"googleSearch\"}}` - Enables real-time information retrieval via Google Search.\n2. **Function calling**: Define your own functions with name, description, and parameters. You can define multiple functions in the array. Functions are defined using JSON (specifically, a selected subset of OpenAPI schema format).\n\nWhen using function calling, you can include multiple function definitions.",
+                      "items": {
+                        "$ref": "#/components/schemas/Tool"
+                      },
+                      "minItems": 0
+                    },
+                    "include_thoughts": {
+                      "type": "boolean",
+                      "description": "Default false. Takes effect only with stream: true; thought summaries are streamed in choices[].delta.reasoning_content before the answer.",
+                      "default": false
+                    },
+                    "reasoning_effort": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ],
+                      "description": "The effort level for the model to use for reasoning. Low effort is faster to respond, high effort is slower to respond but solves more complex problems. Default is \"high\".",
+                      "default": "high"
+                    },
+                    "response_format": {
+                      "description": "Optional JSON Schema object defining the structure of the response. When provided, the model will generate responses that conform to this schema.\n\nExample:\n```json\n{\n  \"type\": \"json_schema\",\n  \"json_schema\": {\n    \"name\": \"structured_output\",\n    \"strict\": true,\n    \"schema\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"response\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"response\"\n      ]\n    }\n  }\n}\n```\n\n`{\"type\":\"json_object\"}` is also supported.",
+                      "$ref": "#/components/schemas/ResponseFormat"
+                    }
+                  },
+                  "required": [
+                    "messages"
+                  ],
+                  "examples": [
+                    {
+                      "messages": [
+                        {
+                          "role": "user",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "What is in this image?"
+                            },
+                            {
+                              "type": "image_url",
+                              "image_url": {
+                                "url": "https://file.aiquickdraw.com/custom-page/akr/section-images/1759055072437dqlsclj2.png"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "tools": [
+                        {
+                          "type": "function",
+                          "function": {
+                            "name": "googleSearch"
+                          }
+                        }
+                      ],
+                      "stream": true,
+                      "include_thoughts": true,
+                      "reasoning_effort": "high",
+                      "response_format": {
+                        "type": "json_schema",
+                        "json_schema": {
+                          "name": "structured_output",
+                          "strict": true,
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "response": {
+                                "type": "string"
+                              }
+                            },
+                            "required": [
+                              "response"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "example": {
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "What is in this image?"
+                        },
+                        {
+                          "type": "image_url",
+                          "image_url": {
+                            "url": "https://file.aiquickdraw.com/custom-page/akr/section-images/1759055072437dqlsclj2.png"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "tools": [
+                    {
+                      "type": "function",
+                      "function": {
+                        "name": "googleSearch"
+                      }
+                    }
+                  ],
+                  "stream": true,
+                  "include_thoughts": true,
+                  "reasoning_effort": "high",
+                  "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {
+                      "name": "structured_output",
+                      "strict": true,
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "response": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful. When `response_format` is provided, the response will conform to the specified JSON schema. Otherwise, returns the standard chat completion format.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Unique identifier for the chat completion",
+                        "examples": [
+                          "chatcmpl-example-123"
+                        ]
+                      },
+                      "object": {
+                        "type": "string",
+                        "description": "Object type",
+                        "examples": [
+                          "chat.completion"
+                        ]
+                      },
+                      "created": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Unix timestamp of when the completion was created",
+                        "examples": [
+                          1677652288
+                        ]
+                      },
+                      "choices": {
+                        "type": "array",
+                        "description": "Array of completion choices",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "index": {
+                              "type": "integer",
+                              "description": "Index of the choice",
+                              "examples": [
+                                0
+                              ]
+                            },
+                            "message": {
+                              "type": "object",
+                              "properties": {
+                                "role": {
+                                  "type": "string",
+                                  "examples": [
+                                    "assistant"
+                                  ]
+                                },
+                                "content": {
+                                  "type": "string",
+                                  "description": "Message content"
+                                }
+                              },
+                              "required": [
+                                "role",
+                                "content"
+                              ]
+                            },
+                            "finish_reason": {
+                              "type": "string",
+                              "description": "Reason why the completion finished",
+                              "examples": [
+                                "stop"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "index",
+                            "message",
+                            "finish_reason"
+                          ]
+                        }
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "prompt_tokens": {
+                            "type": "integer",
+                            "description": "Number of tokens in the prompt",
+                            "examples": [
+                              10
+                            ]
+                          },
+                          "completion_tokens": {
+                            "type": "integer",
+                            "description": "Number of tokens in the completion",
+                            "examples": [
+                              50
+                            ]
+                          },
+                          "total_tokens": {
+                            "type": "integer",
+                            "description": "Total number of tokens",
+                            "examples": [
+                              60
+                            ]
+                          }
+                        },
+                        "required": [
+                          "prompt_tokens",
+                          "completion_tokens",
+                          "total_tokens"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "500": {
+              "$ref": "#/components/responses/Error",
+              "description": "Server error."
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ]
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {
+        "Message": {
+          "type": "object",
+          "properties": {
+            "role": {
+              "type": "string",
+              "enum": [
+                "developer",
+                "system",
+                "user",
+                "assistant",
+                "tool"
+              ],
+              "description": "Message role\n\n- **developer**: Developer-provided instructions that the model should follow, regardless of user messages.\n- **system**: Developer-provided instructions that the model should follow, regardless of user messages.\n- **user**: Messages sent by end users, containing prompts or additional context information.\n- **assistant**: Messages sent by the model in response to user messages.\n- **tool**: Content of tool messages."
+            },
+            "content": {
+              "type": "array",
+              "description": "Message content array that can contain text and image objects.\n\n**Unified Media File Format:**\n\nWhether it's images, videos, audio, or other document types, all media files use the same format structure:\n\n- The `type` field is always `\"image_url\"`\n- The `image_url` field name remains unchanged\n- The only thing that changes is the `url` value, which points to the corresponding media file address\n\nFor example: images, videos, audio, PDFs, and other documents all use the same `{ type: 'image_url', image_url: { url: '...' } }` structure.",
+              "items": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "text"
+                        ],
+                        "examples": [
+                          "text"
+                        ]
+                      },
+                      "text": {
+                        "type": "string",
+                        "description": "Text content of the message."
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "text"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "type": {
+                        "type": "string",
+                        "enum": [
+                          "image_url"
+                        ],
+                        "examples": [
+                          "image_url"
+                        ]
+                      },
+                      "image_url": {
+                        "type": "object",
+                        "properties": {
+                          "url": {
+                            "type": "string",
+                            "format": "uri",
+                            "description": "URL of the media file."
+                          }
+                        },
+                        "required": [
+                          "url"
+                        ]
+                      }
+                    },
+                    "required": [
+                      "type",
+                      "image_url"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          "required": [
+            "role",
+            "content"
+          ],
+          "title": "The messages parameter of the chat model"
+        },
+        "Tool": {
+          "type": "object",
+          "description": "Tool definition.\n\n- **Enhanced Network Access**: `{\"type\": \"function\", \"function\": {\"name\": \"googleSearch\"}}`",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": [
+                "function"
+              ],
+              "description": "Utility type. Must be 'function'.",
+              "examples": [
+                "function"
+              ]
+            },
+            "function": {
+              "type": "object",
+              "description": "Function declarations for enhanced network access.",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Function name. Must be `googleSearch`."
+                },
+                "description": {
+                  "type": "string",
+                  "description": "Optional but recommended. A clear and specific description of the function's purpose. Helps the model understand when to call this function."
+                },
+                "parameters": {
+                  "type": "object",
+                  "description": "Defines a JSON Schema object for function parameters. Required for custom functions; not used by 'googleSearch'. Follows the JSON Schema specification.",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "enum": [
+                        "object"
+                      ],
+                      "description": "Must be 'object' for function parameters"
+                    },
+                    "properties": {
+                      "type": "object",
+                      "description": "Map parameter names to objects defined in their JSON Schema.",
+                      "additionalProperties": {
+                        "description": "Each property defines the parameter's type, description and constraints."
+                      },
+                      "properties": {}
+                    },
+                    "required": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Required parameter name array"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "properties"
+                  ]
+                }
+              },
+              "required": [
+                "name"
+              ]
+            }
+          },
+          "required": [
+            "type",
+            "function"
+          ],
+          "title": "The tools parameter of the chat model"
+        },
+        "ResponseFormat": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Only json_schema value"
+            },
+            "json_schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Only structured_output value"
+                },
+                "strict": {
+                  "type": "boolean",
+                  "description": "Enable strict mode?"
+                },
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "type": "string",
+                      "description": "The response_format follows the JSON Schema specification. Supported types include:\nstring: For text values\nnumber: For floating-point numbers\ninteger: For whole numbers\nboolean: For true/false values\nobject: For structured data with key-value pairs\narray: For lists of items\nnull: To allow null values, add \"null\" to the type array"
+                    },
+                    "properties": {
+                      "type": "object",
+                      "properties": {
+                        "response": {
+                          "type": "object",
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "response"
+                      ],
+                      "description": "Object mapping property names to their JSON Schema definitions"
+                    },
+                    "required": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "description": "Array of required property names"
+                    },
+                    "title": {
+                      "type": "string",
+                      "description": "Short description of the schema"
+                    },
+                    "description": {
+                      "type": "string",
+                      "description": "Detailed description of the schema"
+                    }
+                  },
+                  "required": [
+                    "type",
+                    "properties",
+                    "required",
+                    "title",
+                    "description"
+                  ]
+                }
+              },
+              "required": [
+                "name",
+                "strict",
+                "schema"
+              ],
+              "description": "JSON Schema object defining the structure of the response. When provided, the model will generate responses that conform to this schema."
+            }
+          },
+          "required": [
+            "type",
+            "json_schema"
+          ],
+          "title": "chat model structured data structure"
+        }
+      },
+      "responses": {
+        "Error": {
+          "description": "Server error.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **401**: Unauthorized - Authentication credentials are missing or invalid\n- **402**: Insufficient Credits - Account does not have enough credits to perform the operation\n- **404**: Not Found - The requested resource or endpoint does not exist\n- **408**: Timeout - No result has been returned for over 10 minutes.\n- **422**: Validation Error - The request parameters failed validation checks\n- **429**: Rate Limited - Request limit has been exceeded for this resource\n- **455**: Service Unavailable - System is currently undergoing maintenance\n- **500**: Server Error - An unexpected error occurred while processing the request\n- **501**: Generation Failed - Content generation task failed\n- **505**: Feature Disabled - The requested feature is currently disabled"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "description": "Response message, error description when failed"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              },
+              "examples": {
+                "Example 1": {
+                  "summary": "Example 1",
+                  "value": {
+                    "code": 500,
+                    "msg": "Server Error - An unexpected error occurred while processing the request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

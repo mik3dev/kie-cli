@@ -1,0 +1,445 @@
+{
+  "model": "nano-banana-pro",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "Google - Nano Banana Pro",
+          "deprecated": false,
+          "description": "Image generation using Google's Pro Image to Image model\n\n## Query Task Status\n\nAfter submitting a task, use the unified query endpoint to check progress and retrieve results:\n\n<Card title=\"Get Task Details\" icon=\"lucide-search\" href=\"/market/common/get-task-detail\">\n  Learn how to query task status and retrieve generation results\n</Card>\n\n::: tip[]\nFor production use, we recommend using the `callBackUrl` parameter to receive automatic notifications when generation completes, rather than polling the status endpoint.\n:::\n\n## Related Resources\n\n<CardGroup cols={2}>\n  <Card title=\"Market Overview\" icon=\"lucide-store\" href=\"/market/quickstart\">\n    Explore all available models\n  </Card>\n  <Card title=\"Common API\" icon=\"lucide-cog\" href=\"/common-api/get-account-credits\">\n    Check credits and account usage\n  </Card>\n</CardGroup>\n",
+          "operationId": "nano-banana-pro",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "model": {
+                      "default": "nano-banana-pro",
+                      "description": "The model name to use for generation. Required field.\n\n- Must be `nano-banana-pro` for this endpoint",
+                      "enum": [
+                        "nano-banana-pro"
+                      ],
+                      "examples": [
+                        "nano-banana-pro"
+                      ],
+                      "type": "string"
+                    },
+                    "callBackUrl": {
+                      "description": "The URL to receive generation task completion updates. Optional but recommended for production use.\n\n- System will POST task status and results to this URL when generation completes\n- Callback includes generated content URLs and task information\n- Your callback endpoint should accept POST requests with JSON payload containing results\n- Alternatively, use the Get Task Details endpoint to poll task status\n- To ensure callback security, see [Webhook Verification Guide](/common-api/webhook-verification) for signature verification implementation",
+                      "examples": [
+                        "https://your-domain.com/api/callback"
+                      ],
+                      "format": "uri",
+                      "type": "string"
+                    },
+                    "input": {
+                      "description": "Input parameters for the generation task",
+                      "properties": {
+                        "prompt": {
+                          "description": "A text description of the image you want to generate (Max length: 20000 characters)",
+                          "examples": [
+                            "Comic poster: cool banana hero in shades leaps from sci-fi pad. Six panels: 1) 4K mountain landscape, 2) banana holds page of long multilingual text with auto translation, 3) Gemini 3 hologram for search/knowledge/reasoning, 4) camera UI sliders for angle focus color, 5) frame trio 1:1-9:16, 6) consistent banana poses. Footer shows Google icons. Tagline: Nano Banana Pro now on Kie AI."
+                          ],
+                          "maxLength": 20000,
+                          "type": "string"
+                        },
+                        "image_input": {
+                          "description": "Input images to transform or use as reference (supports up to 8 images) (File URL after upload, not file content; Accepted types: image/jpeg, image/png, image/webp; Max size: 30.0MB)",
+                          "examples": [
+                            []
+                          ],
+                          "items": {
+                            "format": "uri",
+                            "type": "string"
+                          },
+                          "maxItems": 8,
+                          "type": "array"
+                        },
+                        "aspect_ratio": {
+                          "default": "1:1",
+                          "description": "Aspect ratio of the generated image",
+                          "enum": [
+                            "1:1",
+                            "2:3",
+                            "3:2",
+                            "3:4",
+                            "4:3",
+                            "4:5",
+                            "5:4",
+                            "9:16",
+                            "16:9",
+                            "21:9",
+                            "auto"
+                          ],
+                          "examples": [
+                            "1:1"
+                          ],
+                          "type": "string"
+                        },
+                        "resolution": {
+                          "default": "1K",
+                          "description": "Resolution of the generated image",
+                          "enum": [
+                            "1K",
+                            "2K",
+                            "4K"
+                          ],
+                          "examples": [
+                            "1K"
+                          ],
+                          "type": "string"
+                        },
+                        "output_format": {
+                          "description": "Output image format: png or jpg. Set this field explicitly.",
+                          "enum": [
+                            "png",
+                            "jpg"
+                          ],
+                          "examples": [
+                            "png"
+                          ],
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "prompt"
+                      ],
+                      "type": "object"
+                    }
+                  },
+                  "required": [
+                    "model"
+                  ],
+                  "type": "object"
+                },
+                "example": {
+                  "model": "nano-banana-pro",
+                  "callBackUrl": "https://your-domain.com/api/callback",
+                  "input": {
+                    "prompt": "Comic poster: cool banana hero in shades leaps from sci-fi pad. Six panels: 1) 4K mountain landscape, 2) banana holds page of long multilingual text with auto translation, 3) Gemini 3 hologram for search/knowledge/reasoning, 4) camera UI sliders for angle focus color, 5) frame trio 1:1-9:16, 6) consistent banana poses. Footer shows Google icons. Tagline: Nano Banana Pro now on Kie AI.",
+                    "image_input": [],
+                    "aspect_ratio": "1:1",
+                    "resolution": "1K",
+                    "output_format": "png"
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "$ref": "#/components/schemas/response%20not%20with%20recordId"
+                      }
+                    ]
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "taskId": "task_nano-banana-pro_1765178625768"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "500": {
+              "$ref": "#/components/responses/Error",
+              "description": "Server error."
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ],
+          "callbacks": {
+            "onImageGenerated": {
+              "{$request.body#/callBackUrl}": {
+                "post": {
+                  "summary": "Image Generation Callback",
+                  "description": "Sent when the task succeeds or fails.",
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "integer",
+                              "description": "200: success. 501: failure; see data.failCode and data.failMsg.",
+                              "enum": [
+                                200,
+                                501
+                              ]
+                            },
+                            "msg": {
+                              "type": "string",
+                              "description": "Status message",
+                              "example": "Playground task completed successfully."
+                            },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "completeTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task completion time, represented as a Unix timestamp in milliseconds",
+                                  "example": 1786428982000
+                                },
+                                "costTime": {
+                                  "type": "integer",
+                                  "description": "Processing time in seconds. Present on both success and failure callbacks.",
+                                  "example": 29
+                                },
+                                "createTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task creation time, represented as a Unix timestamp in milliseconds",
+                                  "example": 1786428952000
+                                },
+                                "creditsConsumed": {
+                                  "type": "number",
+                                  "format": "double",
+                                  "description": "Credits consumed by the task; 0 for failed tasks.",
+                                  "example": 8
+                                },
+                                "model": {
+                                  "type": "string",
+                                  "description": "Image generation model used for the task",
+                                  "example": "nano-banana-pro"
+                                },
+                                "param": {
+                                  "type": "string",
+                                  "description": "Parameters submitted when creating the task, in JSON string format",
+                                  "example": "{\"input\":\"{\\\"image_input\\\":[],\\\"aspect_ratio\\\":\\\"1:1\\\",\\\"output_format\\\":\\\"png\\\",\\\"prompt\\\":\\\"Comic poster: A cool banana hero wearing sunglasses leaps from a sci-fi platform. The poster contains six panels: 1) a mountain landscape in 4K resolution, 2) the banana holding a page containing extensive multilingual text with automatic translation support, 3) a Gemini 3 holographic interface featuring search, knowledge Q&A, and logical reasoning capabilities, 4) camera UI adjustment sliders for angle, focal length, and color, 5) three aspect ratio demonstrations ranging from 1:1 to 9:16, and 6) consistent action poses for the banana. Display the Google icon at the bottom of the poster with the slogan: Nano Banana Pro is now available on Kie AI.\\\",\\\"resolution\\\":\\\"1K\\\"}\",\"callBackUrl\": \"https://your-domain.com/api/callback\",\"model\":\"nano-banana-pro\"}"
+                                },
+                                "resultJson": {
+                                  "type": "string",
+                                  "description": "Image generation result in JSON string format. resultUrls contains the list of generated image URLs. Present only when state is success.",
+                                  "example": "{\"resultUrls\":[\"https://tempfile.aiquickdraw.com/workers/images/image_b700b7f77f13b79cd2ee5bf1d39a104f.png\"]}"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "description": "Task status",
+                                  "enum": [
+                                    "success",
+                                    "fail"
+                                  ],
+                                  "example": "success"
+                                },
+                                "taskId": {
+                                  "type": "string",
+                                  "description": "Task ID",
+                                  "example": "5659c84dcf183f0805e9cfdf746af2cf"
+                                },
+                                "updateTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Use completeTime as the completion time; updateTime may equal createTime.",
+                                  "example": 1786428982000
+                                },
+                                "failCode": {
+                                  "type": "string",
+                                  "description": "Failure code, a numeric string such as \"400\" or \"500\". Present only when state is fail.",
+                                  "example": "500"
+                                },
+                                "failMsg": {
+                                  "type": "string",
+                                  "description": "Failure reason. Present only when state is fail.",
+                                  "example": "<error detail>"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "examples": {
+                          "success": {
+                            "summary": "Success",
+                            "value": {
+                              "code": 200,
+                              "msg": "Playground task completed successfully.",
+                              "data": {
+                                "taskId": "5659c84dcf183f0805e9cfdf746af2cf",
+                                "model": "nano-banana-pro",
+                                "state": "success",
+                                "param": "{\"input\":\"{\\\"image_input\\\":[],\\\"aspect_ratio\\\":\\\"1:1\\\",\\\"output_format\\\":\\\"png\\\",\\\"prompt\\\":\\\"Comic poster: A cool banana hero wearing sunglasses leaps from a sci-fi platform. The poster contains six panels: 1) a mountain landscape in 4K resolution, 2) the banana holding a page containing extensive multilingual text with automatic translation support, 3) a Gemini 3 holographic interface featuring search, knowledge Q&A, and logical reasoning capabilities, 4) camera UI adjustment sliders for angle, focal length, and color, 5) three aspect ratio demonstrations ranging from 1:1 to 9:16, and 6) consistent action poses for the banana. Display the Google icon at the bottom of the poster with the slogan: Nano Banana Pro is now available on Kie AI.\\\",\\\"resolution\\\":\\\"1K\\\"}\",\"callBackUrl\": \"https://your-domain.com/api/callback\",\"model\":\"nano-banana-pro\"}",
+                                "resultJson": "{\"resultUrls\":[\"https://tempfile.aiquickdraw.com/workers/images/image_b700b7f77f13b79cd2ee5bf1d39a104f.png\"]}",
+                                "completeTime": 1786428982000,
+                                "createTime": 1786428952000,
+                                "costTime": 29,
+                                "creditsConsumed": 8,
+                                "updateTime": 1786428982000
+                              }
+                            }
+                          },
+                          "failure": {
+                            "summary": "Failure",
+                            "value": {
+                              "code": 501,
+                              "msg": "Playground task failed.",
+                              "data": {
+                                "taskId": "5659c84dcf183f0805e9cfdf746af2cf",
+                                "model": "nano-banana-pro",
+                                "state": "fail",
+                                "param": "{\"input\":\"{\\\"image_input\\\":[],\\\"aspect_ratio\\\":\\\"1:1\\\",\\\"output_format\\\":\\\"png\\\",\\\"prompt\\\":\\\"Comic poster: A cool banana hero wearing sunglasses leaps from a sci-fi platform. The poster contains six panels: 1) a mountain landscape in 4K resolution, 2) the banana holding a page containing extensive multilingual text with automatic translation support, 3) a Gemini 3 holographic interface featuring search, knowledge Q&A, and logical reasoning capabilities, 4) camera UI adjustment sliders for angle, focal length, and color, 5) three aspect ratio demonstrations ranging from 1:1 to 9:16, and 6) consistent action poses for the banana. Display the Google icon at the bottom of the poster with the slogan: Nano Banana Pro is now available on Kie AI.\\\",\\\"resolution\\\":\\\"1K\\\"}\",\"callBackUrl\": \"https://your-domain.com/api/callback\",\"model\":\"nano-banana-pro\"}",
+                                "failCode": "500",
+                                "failMsg": "<error detail>",
+                                "completeTime": 1786428982000,
+                                "createTime": 1786428952000,
+                                "costTime": 29,
+                                "creditsConsumed": 0,
+                                "updateTime": 1786428982000
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Callback received successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {
+        "response not with recordId": {
+          "type": "object",
+          "required": [
+            "data"
+          ],
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+              "enum": [
+                200,
+                401,
+                402,
+                404,
+                422,
+                429,
+                433,
+                455,
+                500,
+                501,
+                505
+              ]
+            },
+            "msg": {
+              "type": "string",
+              "description": "Response message, error description upon failure",
+              "examples": [
+                "success"
+              ]
+            },
+            "data": {
+              "type": "object",
+              "required": [
+                "taskId"
+              ],
+              "properties": {
+                "taskId": {
+                  "type": "string",
+                  "description": "The task ID can be used with the \"Get Task Details\" endpoint to query the task status.",
+                  "examples": [
+                    "dc1928bfcbc77cb6c85f3359a9c718b3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {
+        "Error": {
+          "description": "Server error.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **401**: Unauthorized - Authentication credentials are missing or invalid\n- **402**: Insufficient Credits - Account does not have enough credits to perform the operation\n- **404**: Not Found - The requested resource or endpoint does not exist\n- **408**: Timeout - No result has been returned for over 10 minutes.\n- **422**: Validation Error - The request parameters failed validation checks\n- **429**: Rate Limited - Request limit has been exceeded for this resource\n- **455**: Service Unavailable - System is currently undergoing maintenance\n- **500**: Server Error - An unexpected error occurred while processing the request\n- **501**: Generation Failed - Content generation task failed\n- **505**: Feature Disabled - The requested feature is currently disabled"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "description": "Response message, error description when failed"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              },
+              "examples": {
+                "Example 1": {
+                  "summary": "Example 1",
+                  "value": {
+                    "code": 500,
+                    "msg": "Server Error - An unexpected error occurred while processing the request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

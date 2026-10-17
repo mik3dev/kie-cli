@@ -1,0 +1,243 @@
+{
+  "model": "ai-music-api/sounds",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "Generate sounds",
+          "deprecated": false,
+          "description": ":::warning Document updated\nIf you have already completed the integration process previously, you can still access the old version document at: Old version address (https://docs.kie.ai/old-model/suno-api/generate-sounds)\n:::\nUsed for creating a sound generation task (Sounds Task). It supports settings for looping, tempo (BPM), pitch (Key), as well as lyrics subtitle capture, etc. \n\n## 🚀 User Guide \n- By using this interface, you can generate corresponding audio content based on the input `prompt`.\n- It supports setting up loop playback effect, which is suitable for background music, ambient sounds, and other scenarios.\n- It allows specifying BPM (beats per minute) and pitch (Key) to facilitate control over the style of the generated result.\n- Optional feature to enable lyric subtitle capture for easier display or processing of lyric content later.\n- Supports asynchronous reception of task completion notifications through callBackUrl address. \n\n## 📌 Usage Scenarios\n- 🎧 Background music creation\n- 🎮 Game sound effects or looped ambient sounds generation\n- 🌐 Integration of audio content platforms and creative tools\n\nWhen polling GET /api/v1/jobs/recordInfo, the clips are in data.response.data[] (audio_url, stream_audio_url, image_url, id, duration).\n",
+          "operationId": "generate-sounds",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "description": "The model name to use for generation. Required field.",
+                      "examples": [
+                        "ai-music-api/sounds"
+                      ]
+                    },
+                    "callBackUrl": {
+                      "type": "string",
+                      "title": "Callback address",
+                      "description": "The URL to receive generation task completion updates. Optional but recommended for production use.\n\n- System will POST task status and results to this URL when generation completes\n- Callback includes generated content URLs and task information\n- Your callback endpoint should accept POST requests with JSON payload containing results\n- Alternatively, use the Get Task Details endpoint to poll task status\n- To ensure callback security, see [Webhook Verification Guide](/common-api/webhook-verification) for signature verification implementation"
+                    },
+                    "input": {
+                      "type": "object",
+                      "description": "Input parameters for the generation task",
+                      "properties": {
+                        "prompt": {
+                          "description": "Description of the sound (max 500 characters).",
+                          "type": "string",
+                          "title": "prompt"
+                        },
+                        "model": {
+                          "type": "string",
+                          "title": "",
+                          "description": "Required. Use V6, V6_MINI or V6_WILD.\n- **`V6_WILD`**: Pushes creative boundaries for bolder, more distinctive musical expression.\n- **`V6_MINI`**: Lightweight and fast, balancing quality and speed for effortless creation.\n- **`V6`**: Greater musical expression with more natural vocals and richer details.",
+                          "enum": [
+                            "V5",
+                            "V5_5",
+                            "V6",
+                            "V6_WILD",
+                            "V6_MINI"
+                          ]
+                        },
+                        "sound_loop": {
+                          "type": "boolean",
+                          "title": "",
+                          "description": "Whether the generated sound loops seamlessly.",
+                          "default": false
+                        },
+                        "sound_tempo": {
+                          "type": "integer",
+                          "title": "BPM:Beats per minute",
+                          "description": "Tempo in BPM (1–300). Omit for automatic tempo.",
+                          "minimum": 1,
+                          "maximum": 300
+                        },
+                        "sound_key": {
+                          "type": "string",
+                          "title": "",
+                          "default": "Any",
+                          "enum": [
+                            "Any",
+                            "Cm",
+                            "C#m",
+                            "Dm",
+                            "D#m",
+                            "Em",
+                            "Fm",
+                            "F#m",
+                            "Gm",
+                            "G#m",
+                            "Am",
+                            "A#m",
+                            "Bm",
+                            "C",
+                            "C#",
+                            "D",
+                            "D#",
+                            "E",
+                            "F",
+                            "F#",
+                            "G",
+                            "G#",
+                            "A",
+                            "A#",
+                            "B"
+                          ],
+                          "examples": [
+                            "Any"
+                          ],
+                          "description": "Musical key. Default \"Any\" (automatic)."
+                        },
+                        "grab_lyrics": {
+                          "type": "boolean",
+                          "title": "Grab the lyrics subtitles",
+                          "description": "Whether to capture the lyrics subtitles \n\nWill the interface be called after completion to obtain the lyrics subtitles?",
+                          "default": false
+                        }
+                      },
+                      "required": [
+                        "prompt",
+                        "model"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "model",
+                    "input"
+                  ]
+                },
+                "example": {
+                  "model": "ai-music-api/sounds",
+                  "callBackUrl": "https://api.example.com/callback",
+                  "input": {
+                    "prompt": "sint",
+                    "model": "V6",
+                    "sound_loop": true,
+                    "sound_tempo": 166,
+                    "sound_key": "D#m",
+                    "grab_lyrics": true
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "required": [
+                      "data"
+                    ],
+                    "properties": {
+                      "code": {
+                        "type": "integer",
+                        "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+                        "enum": [
+                          200,
+                          401,
+                          402,
+                          404,
+                          422,
+                          429,
+                          433,
+                          455,
+                          500,
+                          501,
+                          505
+                        ]
+                      },
+                      "msg": {
+                        "type": "string",
+                        "description": "Response message, error description upon failure",
+                        "examples": [
+                          "success"
+                        ]
+                      },
+                      "data": {
+                        "type": "object",
+                        "required": [
+                          "taskId"
+                        ],
+                        "properties": {
+                          "taskId": {
+                            "type": "string",
+                            "description": "The task ID can be used with the \"Get Task Details\" endpoint to query the task status.",
+                            "examples": [
+                              "dc1928bfcbc77cb6c85f3359a9c718b3"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "taskId": "task38695****935u9043u"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ]
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {},
+      "responses": {},
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}
