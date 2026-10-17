@@ -14,13 +14,18 @@ tar -xzf kie-cli_*_darwin_arm64.tar.gz   # Windows: unzip the .zip
 # move the binary to a directory on your PATH
 ```
 
+If macOS Gatekeeper blocks a browser-downloaded binary: `xattr -d com.apple.quarantine ./kie-cli`.
+
 Archives are named `kie-cli_<version>_<os>_<arch>` (`tar.gz`, `zip` on Windows) for `linux`, `darwin` and `windows` on `amd64` and `arm64`. A `checksums.txt` is published with each release.
 
 **(b) Go toolchain:**
 
 ```sh
 GOPRIVATE=github.com/mik3dev/* go install github.com/mik3dev/kie-cli/cmd/kie-cli@latest
+# PowerShell: $env:GOPRIVATE="github.com/mik3dev/*"; go install github.com/mik3dev/kie-cli/cmd/kie-cli@latest
 ```
+
+A private repo also needs git credentials: run `gh auth setup-git`, or use an SSH rewrite (`git config --global url."git@github.com:".insteadOf "https://github.com/"`).
 
 **(c) From a clone:**
 
@@ -116,6 +121,7 @@ make test       # go test -race -cover ./...
 make lint       # golangci-lint run ./...
 make build      # bin/kie-cli
 make snapshot   # local goreleaser build, no publish
+make tidy-check # go mod tidy -diff (must print nothing)
 ```
 
 Tests never call the real API. Live smoke tests will be run by hand only (`KIE_E2E=1`, build tag `live`) and never in CI.
