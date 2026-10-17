@@ -2,7 +2,10 @@ package result_test
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/mik3dev/kie-cli/internal/result"
@@ -126,5 +129,50 @@ func TestSyncIDs(t *testing.T) {
 		if string(b) != c.js {
 			t.Errorf("%s: json %s want %s", c.in, b, c.js)
 		}
+	}
+}
+
+// TestRealRecords pins the extraction against task records captured from the live kie.ai API.
+func TestRealRecords(t *testing.T) {
+	paths, err := filepath.Glob(filepath.Join("..", "..", "testdata", "live", "records", "*.json"))
+	if err != nil || len(paths) == 0 {
+		t.Fatalf("no real records (err=%v)", err)
+	}
+	wantURLs := map[string]int{"z-image": 1, "recraft__remove-background": 1, "ai-music-api__generate": 2}
+	for _, p := range paths {
+		name := strings.TrimSuffix(filepath.Base(p), ".json")
+		t.Run(name, func(t *testing.T) {
+			data, err := os.ReadFile(p)
+			if err != nil {
+				t.Fatal(err)
+			}
+			var rec struct {
+				ResultJSON string `json:"resultJson"`
+			}
+			if err := json.Unmarshal(data, &rec); err != nil || rec.ResultJSON == "" {
+				t.Fatalf("resultJson: %v", err)
+			}
+			raw := json.RawMessage(rec.ResultJSON)
+			urls := result.URLs(raw)
+			if want, ok := wantURLs[name]; ok && len(urls) != want {
+				t.Fatalf("want %d urls, got %v", want, urls)
+			}
+			if len(urls) == 0 {
+				t.Fatal("no urls")
+			}
+			for _, u := range urls {
+				if !strings.HasPrefix(u, "http://") && !strings.HasPrefix(u, "https://") {
+					t.Errorf("not http(s): %s", u)
+				}
+				if name == "ai-music-api__generate" && !strings.HasSuffix(u, ".mp3") {
+					t.Errorf("suno url is not audio: %s", u)
+				}
+			}
+			if name == "ai-music-api__generate" {
+				if ids := result.Extract("t", raw); len(ids.AudioIDs) != 2 {
+					t.Fatalf("audio ids = %v", ids.AudioIDs)
+				}
+			}
+		})
 	}
 }
