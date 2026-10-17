@@ -22,8 +22,9 @@ jobs:
         run: go test -race -count=1 -cover ./...
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.13.2
-          # Build golangci-lint with the job's Go: the prebuilt binary breaks when setup-go ships a newer patch release.
+          # v2.13.2 cannot read go1.27.2 export data (typecheck errors); v2.15.0 can.
+          version: v2.15.0
+          # Build golangci-lint with the job's Go so a newer Go patch release does not break the prebuilt binary.
           install-mode: goinstall
       - name: Cross-platform build checks
         run: |
