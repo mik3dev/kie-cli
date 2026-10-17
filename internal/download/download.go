@@ -86,7 +86,7 @@ func one(ctx context.Context, c *api.Client, u, outDir, base string) (File, erro
 	}
 	defer func() { _ = resp.Body.Close() }()
 	name, kind := nameAndKind(u, resp.Header.Get("Content-Type"))
-	dest, err := save(resp.Body, outDir, base, name)
+	dest, err := save(ctx, resp.Body, outDir, base, name)
 	if err != nil {
 		return File{}, ioError(scrub(c, err.Error()), u)
 	}
@@ -231,13 +231,18 @@ func kindOf(mt string) string {
 // save streams body to a temp .part file, then hard-links it to the first free
 // name (base+ext, base-1+ext, ...). Link fails if the target exists, so an
 // existing file is never replaced, even under a race.
-func save(body io.Reader, outDir, base, ext string) (string, error) {
+func save(ctx context.Context, body io.Reader, outDir, base, ext string) (string, error) {
 	part, err := os.CreateTemp(outDir, ".kie-*.part")
 	if err != nil {
 		return "", err
 	}
 	defer func() { _ = os.Remove(part.Name()) }()
 	if _, err := io.Copy(part, body); err != nil {
+		_ = part.Close()
+		return "", err
+	}
+	// A cancelled request can surface as a clean EOF on a truncated body.
+	if err := ctx.Err(); err != nil {
 		_ = part.Close()
 		return "", err
 	}
