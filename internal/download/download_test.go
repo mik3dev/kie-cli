@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
+	"syscall"
 	"testing"
 
 	"github.com/mik3dev/kie-cli/internal/api"
@@ -203,5 +204,62 @@ func assertIOError(t *testing.T, err error, url string) {
 	var oe *output.Error
 	if !errors.As(err, &oe) || oe.Code != output.CodeIO || oe.Details["url"] != url {
 		t.Fatalf("err = %#v", err)
+	}
+}
+
+func okServer(t *testing.T) *fake {
+	return newFake(t, func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte("new")) })
+}
+
+func TestTraversalStaysInsideOutDir(t *testing.T) {
+	f := okServer(t)
+	parent := t.TempDir()
+	dir := filepath.Join(parent, "out")
+	for _, tc := range [][2]string{{"kling", "a/../../x"}, {`..\..\evil/..`, ".."}, {"", ""}} {
+		files, err := download.All(context.Background(), f.c, []string{f.srv.URL + "/x.png"}, dir, tc[0], tc[1])
+		if err != nil {
+			t.Fatalf("%v: %v", tc, err)
+		}
+		if filepath.Dir(files[0].Path) != dir {
+			t.Fatalf("%v escaped: %s", tc, files[0].Path)
+		}
+	}
+	entries, _ := os.ReadDir(parent)
+	if len(entries) != 1 {
+		t.Fatalf("wrote outside outDir: %v", entries)
+	}
+}
+
+func TestNormalNameUnchanged(t *testing.T) {
+	f := okServer(t)
+	files, err := download.All(context.Background(), f.c, []string{f.srv.URL + "/x.mp4"}, t.TempDir(), "kling-3.0/video", "t1")
+	if err != nil || filepath.Base(files[0].Path) != "kling-3.0-video_t1_0.mp4" {
+		t.Fatalf("%v %+v", err, files)
+	}
+}
+
+func TestNoHardLinkFallback(t *testing.T) {
+	defer download.SetLink(func(string, string) error { return syscall.ENOTSUP })()
+	f := okServer(t)
+	dir := t.TempDir()
+	orig := filepath.Join(dir, "m_t_0.png")
+	if err := os.WriteFile(orig, []byte("orig"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	files, err := download.All(context.Background(), f.c, []string{f.srv.URL + "/x.png"}, dir, "m", "t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if filepath.Base(files[0].Path) != "m_t_0-1.png" {
+		t.Fatalf("got %s", files[0].Path)
+	}
+	if b, _ := os.ReadFile(files[0].Path); string(b) != "new" {
+		t.Fatalf("content %q", b)
+	}
+	if b, _ := os.ReadFile(orig); string(b) != "orig" {
+		t.Fatalf("original modified: %q", b)
+	}
+	if entries, _ := os.ReadDir(dir); len(entries) != 2 {
+		t.Fatalf("leftovers: %v", entries)
 	}
 }

@@ -46,7 +46,28 @@ func All(ctx context.Context, c *api.Client, urls []string, outDir, model, taskI
 }
 
 func baseName(model, taskID string, n int) string {
-	return fmt.Sprintf("%s_%s_%d", strings.ReplaceAll(model, "/", "-"), taskID, n)
+	return fmt.Sprintf("%s_%s_%d", safeToken(model), safeToken(taskID), n)
+}
+
+// safeToken keeps [A-Za-z0-9._-], maps everything else to "-" and removes
+// ".." so the token can never act as a path component.
+func safeToken(s string) string {
+	b := []rune(s)
+	for i, r := range b {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '.', r == '_', r == '-':
+		default:
+			b[i] = '-'
+		}
+	}
+	out := string(b)
+	for strings.Contains(out, "..") {
+		out = strings.ReplaceAll(out, "..", "-")
+	}
+	if out == "" || out == "." {
+		return "x"
+	}
+	return out
 }
 
 func one(ctx context.Context, c *api.Client, u, outDir, base string) (File, error) {
@@ -212,7 +233,14 @@ func save(body io.Reader, outDir, base, ext string) (string, error) {
 			name = fmt.Sprintf("%s-%d%s", base, n, ext)
 		}
 		dest := filepath.Join(outDir, name)
-		err := os.Link(part.Name(), dest)
+		if filepath.Dir(dest) != filepath.Clean(outDir) {
+			return "", errors.New("refusing to write outside the output directory")
+		}
+		err := linkFile(part.Name(), dest)
+		if err != nil && !errors.Is(err, os.ErrExist) {
+			// No hard links here (FAT, some network mounts): exclusive copy.
+			err = copyExclusive(part.Name(), dest)
+		}
 		if err == nil {
 			return dest, nil
 		}
@@ -220,6 +248,32 @@ func save(body io.Reader, outDir, base, ext string) (string, error) {
 			return "", err
 		}
 	}
+}
+
+// linkFile is a variable so tests can simulate filesystems without hard links.
+var linkFile = os.Link
+
+// copyExclusive creates dest with O_EXCL (never replaces) and copies src into it.
+func copyExclusive(src, dest string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.OpenFile(dest, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(out, in); err != nil {
+		out.Close()
+		os.Remove(dest)
+		return err
+	}
+	if err := out.Close(); err != nil {
+		os.Remove(dest)
+		return err
+	}
+	return nil
 }
 
 func scrub(c *api.Client, s string) string {
