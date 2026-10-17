@@ -113,10 +113,10 @@ func TestLiveCatalog(t *testing.T) {
 		t.Fatalf("models list: exit %d total=%v, want >= 180 (chat models are hidden: 227 catalog - 40 chat = 187)", code, m["total"])
 	}
 	t.Logf("model count: %v", total)
-	// Search matches model id/title: "suno" only names the recovery model,
-	// the main Suno generator is found through "ai-music".
+	// Search also matches the description and aliases, so "suno" finds the main
+	// generator as well as the recovery model.
 	for query, want := range map[string]string{
-		"suno":     "ai-music-api/suno-recovery-audio",
+		"suno":     "ai-music-api/generate",
 		"ai-music": "ai-music-api/generate",
 	} {
 		m, code = run("models", "search", query)

@@ -131,6 +131,8 @@ Tests never call the real API. Live smoke tests run by hand only (build tag `liv
 set -a; . ./.env; set +a; KIE_E2E=1 go test -tags live -run Live ./internal/cli/ -v
 # also the paid tests; KIE_E2E_BUDGET caps credits spent in one run (default 30)
 set -a; . ./.env; set +a; KIE_E2E=1 KIE_E2E_PAID=1 KIE_E2E_BUDGET=30 go test -tags live -run Live ./internal/cli/ -v
+# refresh testdata/live/records from paid runs (sanitized; refuses to write if the API key appears)
+set -a; . ./.env; set +a; KIE_E2E=1 KIE_E2E_PAID=1 KIE_E2E_CAPTURE=1 go test -tags live -run Live ./internal/cli/ -v
 ```
 
 Releasing: push a tag `vX.Y.Z`. The release workflow runs goreleaser and publishes the archives and `checksums.txt` to GitHub Releases.
