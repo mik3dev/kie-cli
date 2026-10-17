@@ -14,9 +14,11 @@ func TestFileKeyFuncSchemaAware(t *testing.T) {
 		"max_images":     map[string]any{"type": "integer"},
 		"reference":      map[string]any{"type": "string", "format": "uri"},
 		"image_enum":     map[string]any{"type": "string", "enum": []any{"a"}},
+		"video_list": map[string]any{"type": "array", "items": map[string]any{"type": "object", "properties": map[string]any{
+			"url": map[string]any{"type": "string", "format": "uri"}}}},
 	}}
 	tests := map[string]bool{
-		"image_urls": true, "image": true, "reference": true,
+		"video_list": true, "image_urls": true, "image": true, "reference": true,
 		"audio_id": false, "image_size": false, "generate_audio": false, "max_images": false, "image_enum": false,
 		"unknown_url": true, // not in schema: name heuristic
 		"prompt":      false,

@@ -80,7 +80,7 @@ func sweepOne(d schema.Doc) (sweepResult, []string) {
 		}
 	}
 	for k := range names {
-		if upload.FileKey(k) || schema.HasURIFormat(sch, k) {
+		if upload.SchemaFileKey(sch, k) {
 			r.files = append(r.files, k)
 		}
 	}
