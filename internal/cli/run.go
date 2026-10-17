@@ -361,7 +361,11 @@ type finishArgs struct {
 func finishTask(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths, a finishArgs) error {
 	warn := warnWriter(cmd, deps)
 	w := task.Waiter{Sleep: deps.Sleep, Now: deps.Now, Progress: warn}
-	rec, err := w.Wait(cmd.Context(), c, a.id, a.timeout)
+	wait := w.Wait
+	if a.model == task.RecoveryModel {
+		wait = w.WaitRecovery
+	}
+	rec, err := wait(cmd.Context(), c, a.id, a.timeout)
 	a.model = firstNonEmpty(rec.Model, a.model)
 	if err != nil {
 		if rec.State == "fail" {

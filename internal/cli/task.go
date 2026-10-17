@@ -54,11 +54,15 @@ func newTaskGetCmd(deps Deps) *cobra.Command {
 		Short: "Fetch the current state and result of a task",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			c, _, err := newAPIClient(cmd, deps)
+			c, paths, err := newAPIClient(cmd, deps)
 			if err != nil {
 				return err
 			}
-			rec, err := task.Get(cmd.Context(), c, args[0])
+			get := task.Get
+			if lookupLedger(paths.Ledger, args[0]).Model == task.RecoveryModel {
+				get = task.GetRecovery
+			}
+			rec, err := get(cmd.Context(), c, args[0])
 			if err != nil {
 				return err
 			}

@@ -30,6 +30,7 @@ type fakeKie struct {
 	home     string
 
 	recordHits, createHits, uploadHits atomic.Int32
+	recoveryHits                       atomic.Int32
 	audioHits, characterHits           atomic.Int32             // synchronous omni routes
 	createBody                         atomic.Value             // map[string]any
 	omniBody                           atomic.Value             // map[string]any, last omni request
@@ -37,8 +38,10 @@ type fakeKie struct {
 	// behaviour knobs
 	createReply func() string // full envelope JSON; "" = success
 	recordReply func(n int32) string
-	cdnStatus   int
-	schemaFn    func(model string) json.RawMessage // overrides the schema fixture when non-nil
+	// recoveryReply: full envelope JSON for GET /api/v1/suno/recovery/record-info; "" = default
+	recoveryReply func(n int32) string
+	cdnStatus     int
+	schemaFn      func(model string) json.RawMessage // overrides the schema fixture when non-nil
 }
 
 func envelope(data any) string {
@@ -128,6 +131,22 @@ func (f *fakeKie) serve(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		reply(f.recordInfo("success"))
+	case p == "/api/v1/suno/recovery/record-info":
+		n := f.recoveryHits.Add(1)
+		if f.recoveryReply != nil {
+			if s := f.recoveryReply(n); s != "" {
+				reply(s)
+				return
+			}
+		}
+		if n == 1 {
+			reply(`{"code":201,"msg":"running","data":null}`)
+			return
+		}
+		reply(envelope([]map[string]string{
+			{"id": "a1", "audio_url": f.cdn.URL + "/1.mp3"},
+			{"id": "a2", "audio_url": f.cdn.URL + "/2.mp3"},
+		}))
 	case p == "/api/v1/common/download-url":
 		reply(`{"code":404,"msg":"no such file"}`)
 	default:
