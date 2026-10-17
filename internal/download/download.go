@@ -14,6 +14,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mik3dev/kie-cli/internal/api"
 	"github.com/mik3dev/kie-cli/internal/output"
@@ -74,7 +75,7 @@ func one(ctx context.Context, c *api.Client, u, outDir, base string) (File, erro
 	if err := requireHTTPS(u); err != nil {
 		return File{}, ioError(err.Error(), u)
 	}
-	hc := noHTTPRedirects(c.HTTP)
+	hc := downloadClient(c.HTTP)
 	resp, err := get(ctx, hc, u)
 	if err == nil && !ok(resp) {
 		resp.Body.Close()
@@ -143,12 +144,31 @@ func viaDownloadURL(ctx context.Context, c *api.Client, hc *http.Client, u strin
 	return resp, nil
 }
 
-// noHTTPRedirects copies hc so redirects to non-https URLs are refused.
-func noHTTPRedirects(hc *http.Client) *http.Client {
-	if hc == nil {
-		hc = http.DefaultClient
+// headerTimeout bounds the wait for response headers. It is a variable so
+// tests can shorten it.
+var headerTimeout = 60 * time.Second
+
+// downloadClient derives the CDN client from hc. Unlike the API client it has
+// no overall Timeout (that would cut long body reads); the transfer is bound
+// by ctx and a response-header timeout instead. Redirects to non-https URLs
+// are refused. hc's transport is cloned (never mutated); a custom non-stdlib
+// RoundTripper is used as is.
+func downloadClient(hc *http.Client) *http.Client {
+	cp := http.Client{}
+	var rt http.RoundTripper = http.DefaultTransport
+	if hc != nil {
+		cp = *hc
+		if hc.Transport != nil {
+			rt = hc.Transport
+		}
 	}
-	cp := *hc
+	if t, ok := rt.(*http.Transport); ok {
+		clone := t.Clone()
+		clone.ResponseHeaderTimeout = headerTimeout
+		rt = clone
+	}
+	cp.Transport = rt
+	cp.Timeout = 0
 	cp.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if req.URL.Scheme != "https" {
 			return errors.New("refusing redirect to non-https URL")

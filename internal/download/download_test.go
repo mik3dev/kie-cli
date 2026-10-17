@@ -11,6 +11,7 @@ import (
 	"sync"
 	"syscall"
 	"testing"
+	"time"
 
 	"github.com/mik3dev/kie-cli/internal/api"
 	"github.com/mik3dev/kie-cli/internal/download"
@@ -261,5 +262,71 @@ func TestNoHardLinkFallback(t *testing.T) {
 	}
 	if entries, _ := os.ReadDir(dir); len(entries) != 2 {
 		t.Fatalf("leftovers: %v", entries)
+	}
+}
+
+// slowBody writes part of the body, waits, then the rest; it stops early when
+// the client goes away.
+func slowBody(pause time.Duration) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "video/mp4")
+		_, _ = w.Write([]byte("first"))
+		w.(http.Flusher).Flush()
+		select {
+		case <-time.After(pause):
+			_, _ = w.Write([]byte("second"))
+		case <-r.Context().Done():
+		}
+	}
+}
+
+func TestDownloadBodyOutlivesAPIClientTimeout(t *testing.T) {
+	f := newFake(t, slowBody(300*time.Millisecond))
+	f.c.HTTP.Timeout = 100 * time.Millisecond // would kill the body read
+	files, err := download.All(context.Background(), f.c, []string{f.srv.URL + "/media/a.mp4"}, t.TempDir(), "m", "t")
+	if err != nil {
+		t.Fatalf("slow body must not hit the API client timeout: %v", err)
+	}
+	if b, _ := os.ReadFile(files[0].Path); string(b) != "firstsecond" {
+		t.Fatalf("content %q", b)
+	}
+}
+
+func TestDownloadCancelAbortsSlowBody(t *testing.T) {
+	f := newFake(t, slowBody(10*time.Second))
+	ctx, cancel := context.WithTimeout(context.Background(), 200*time.Millisecond)
+	defer cancel()
+	start := time.Now()
+	_, err := download.All(ctx, f.c, []string{f.srv.URL + "/media/a.mp4"}, t.TempDir(), "m", "t")
+	if err == nil {
+		t.Fatal("expected error on cancelled context")
+	}
+	if time.Since(start) > 5*time.Second {
+		t.Fatalf("cancel did not abort the download: %v", time.Since(start))
+	}
+}
+
+func TestDownloadHeaderTimeout(t *testing.T) {
+	defer download.SetHeaderTimeout(50 * time.Millisecond)()
+	f := newFake(t, func(_ http.ResponseWriter, r *http.Request) {
+		select {
+		case <-time.After(2 * time.Second):
+		case <-r.Context().Done():
+		}
+	})
+	_, err := download.All(context.Background(), f.c, []string{f.srv.URL + "/media/a.mp4"}, t.TempDir(), "m", "t")
+	var oe *output.Error
+	if !errors.As(err, &oe) || oe.Code != output.CodeIO {
+		t.Fatalf("want io error, got %v", err)
+	}
+}
+
+func TestDownloadClientHasNoOverallTimeout(t *testing.T) {
+	hc := &http.Client{Timeout: time.Minute}
+	if got := download.NewDownloadClient(hc); got.Timeout != 0 {
+		t.Fatalf("download client Timeout=%v, want 0", got.Timeout)
+	}
+	if hc.Timeout != time.Minute {
+		t.Fatal("input client must not be mutated")
 	}
 }
