@@ -197,3 +197,14 @@ func TestPriceAndHealth(t *testing.T) {
 		t.Fatalf("points: %v %s", err, h)
 	}
 }
+
+func TestSearchTextMatchesProvider(t *testing.T) {
+	ms := []catalog.Model{
+		{Model: "ai-music-api/generate", Title: "AI music generate", Provider: "Suno", TaskType: []string{"Text to Audio"}},
+		{Model: "other/x", Title: "Other", Provider: "Acme"},
+	}
+	got := catalog.Filter(ms, catalog.Query{Text: "suno"})
+	if len(got) != 1 || got[0].Model != "ai-music-api/generate" {
+		t.Fatalf("got %+v", got)
+	}
+}

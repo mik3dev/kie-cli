@@ -21,7 +21,7 @@ This skill is guidance only. The model's own schema is the source of truth: neve
 ## Passing input
 
 - `-p key=value`, repeatable. Values are typed against the schema (numbers, booleans, JSON `{...}`/`[...]`).
-- A repeated key builds an array: `-p image_urls=a.png -p image_urls=b.png`.
+- A repeated key builds an array: `-p image_urls=a.png -p image_urls=b.png`. Commas are never split (`image_urls=a,b` is ONE value and fails as a missing file), so always repeat `-p` for arrays.
 - A local file path in a media field (`image_url`, `image_urls`, `audio_url`, ...) is uploaded automatically; URLs pass through.
 - `-p key=@file.txt` reads the text of a file into the value (for long prompts). `@@x` is a literal `@x`.
 - `--input file.json` (or `--input -` for stdin) supplies a JSON object; `-p` overrides it.

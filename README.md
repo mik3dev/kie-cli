@@ -1,6 +1,6 @@
 # kie-cli
 
-A CLI built for AI agents to generate images, video and audio through the [kie.ai](https://kie.ai) API. 200+ models come from the live catalog. Every command prints exactly one JSON object on stdout; progress and warnings go to stderr. It ships an agent skill (`kie-generate`) that teaches agents how to drive it.
+A CLI built for AI agents to generate images, video and audio through the [kie.ai](https://kie.ai) API. 180+ models come from the live catalog. Every command prints exactly one JSON object on stdout; progress and warnings go to stderr. It ships an agent skill (`kie-generate`) that teaches agents how to drive it.
 
 ## Install
 
@@ -59,7 +59,7 @@ kie-cli run google/imagen4-fast -p prompt="a red fox" --out ./media
 {"taskId":"...","model":"google/imagen4-fast","state":"success","files":[{"path":"media/....png","url":"https://...","kind":"image"}]}
 ```
 
-Use the local files in `files[].path`. Other useful flags: `--no-wait` (then `kie-cli task wait <taskId>`), `--no-download`, `--timeout`, `--input file.json`. The run command's built-in help lists them all.
+Array params take a repeated `-p` (`-p image_urls=a.png -p image_urls=b.png`); a comma list is never split and is treated as one value. Use the local files in `files[].path`. Other useful flags: `--no-wait` (then `kie-cli task wait <taskId>`), `--no-download`, `--timeout`, `--input file.json`. The run command's built-in help lists them all.
 
 ## Presets
 
@@ -124,6 +124,15 @@ make snapshot   # local goreleaser build, no publish
 make tidy-check # go mod tidy -diff (must print nothing)
 ```
 
-Tests never call the real API. Live smoke tests will be run by hand only (`KIE_E2E=1`, build tag `live`) and never in CI.
+Tests never call the real API. Live smoke tests run by hand only (build tag `live`, `KIE_E2E=1`) and never in CI. Load the key from a gitignored `.env` without printing it:
+
+```sh
+# free checks only (GET endpoints and --dry-run, 0 credits)
+set -a; . ./.env; set +a; KIE_E2E=1 go test -tags live -run Live ./internal/cli/ -v
+# also the paid tests; KIE_E2E_BUDGET caps credits spent in one run (default 30)
+set -a; . ./.env; set +a; KIE_E2E=1 KIE_E2E_PAID=1 KIE_E2E_BUDGET=30 go test -tags live -run Live ./internal/cli/ -v
+# refresh testdata/live/records from paid runs (sanitized; refuses to write if the API key appears)
+set -a; . ./.env; set +a; KIE_E2E=1 KIE_E2E_PAID=1 KIE_E2E_CAPTURE=1 go test -tags live -run Live ./internal/cli/ -v
+```
 
 Releasing: push a tag `vX.Y.Z`. The release workflow runs goreleaser and publishes the archives and `checksums.txt` to GitHub Releases.

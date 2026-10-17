@@ -1,0 +1,21 @@
+{
+  "completeTime": 1792261179015,
+  "costTime": 30,
+  "createTime": 1792261148294,
+  "creditsConsumed": 0.8,
+  "failCode": null,
+  "failMsg": null,
+  "model": "z-image",
+  "operationType": "z-image",
+  "param": "{\"input\":\"{\\\"aspect_ratio\\\":\\\"1:1\\\",\\\"prompt\\\":\\\"a red apple on white\\\"}\",\"model\":\"z-image\"}",
+  "paramJson": "{\"input\":\"{\\\"aspect_ratio\\\":\\\"1:1\\\",\\\"prompt\\\":\\\"a red apple on white\\\"}\",\"model\":\"z-image\"}",
+  "response": {
+    "resultUrls": [
+      "https://cdn.example/a478eb081536.png"
+    ]
+  },
+  "resultJson": "{\"resultUrls\":[\"https://cdn.example/a478eb081536.png\"]}",
+  "state": "success",
+  "successFlag": 1,
+  "taskId": "6a51aab9df417eed936de3184a7d354c"
+}

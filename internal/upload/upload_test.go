@@ -221,3 +221,44 @@ func TestResolveLocalCustomPredicate(t *testing.T) {
 		t.Fatalf("uploaded = %v", uploaded)
 	}
 }
+
+func TestFileKeyExcludesNonFileNames(t *testing.T) {
+	for _, k := range []string{"audio_id", "audio_ids", "audio_weight", "image_size", "audio_setting", "audio_settings", "max_images", "generate_audio"} {
+		if upload.FileKey(k) {
+			t.Errorf("FileKey(%q) should be false", k)
+		}
+	}
+	for _, k := range []string{"image_urls", "image", "audio_url", "video_url", "mask"} {
+		if !upload.FileKey(k) {
+			t.Errorf("FileKey(%q) should be true", k)
+		}
+	}
+}
+
+func TestSchemaFileKeyNestedURI(t *testing.T) {
+	sch := map[string]any{"properties": map[string]any{
+		"video_list": map[string]any{"type": "array", "items": map[string]any{"type": "object", "properties": map[string]any{
+			"url": map[string]any{"type": "string", "format": "uri"}}}},
+		"image_size": map[string]any{"type": "string", "enum": []any{"a"}},
+	}}
+	if !upload.SchemaFileKey(sch, "video_list") || upload.SchemaFileKey(sch, "image_size") {
+		t.Fatal("SchemaFileKey wrong")
+	}
+}
+
+func TestResolveLocalNestedObjects(t *testing.T) {
+	f := filepath.Join(t.TempDir(), "x.png")
+	if err := os.WriteFile(f, []byte("x"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	in := map[string]any{"video_list": []any{map[string]any{"url": f}}}
+	out, given, err := upload.ResolveLocal(context.Background(), in, func(k string) bool { return k == "video_list" },
+		func(context.Context, string) (string, error) { return "https://u/x.png", nil })
+	if err != nil || len(given) != 1 {
+		t.Fatalf("err=%v given=%v", err, given)
+	}
+	got := out["video_list"].([]any)[0].(map[string]any)["url"]
+	if got != "https://u/x.png" {
+		t.Fatalf("got %v", got)
+	}
+}
