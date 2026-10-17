@@ -4,3 +4,4 @@
 bin/
 kie-output/
 testdata/live/.raw/
+dist/
