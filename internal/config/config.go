@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/mik3dev/kie-cli/internal/output"
@@ -32,13 +33,24 @@ type Config struct {
 	OutDir string `json:"out_dir,omitempty"`
 }
 
-// ResolvePaths uses KIE_CLI_HOME or, when unset, $HOME/.kie-cli.
+// goos is the running OS; a variable so tests can simulate Windows.
+var goos = runtime.GOOS
+
+// UserHome returns HOME, or USERPROFILE when HOME is empty, or "".
+func UserHome(env func(string) string) string {
+	if h := env("HOME"); h != "" {
+		return h
+	}
+	return env("USERPROFILE")
+}
+
+// ResolvePaths uses KIE_CLI_HOME or, when unset, <home>/.kie-cli (see UserHome).
 func ResolvePaths(env func(string) string) (Paths, error) {
 	home := env("KIE_CLI_HOME")
 	if home == "" {
-		h := env("HOME")
+		h := UserHome(env)
 		if h == "" {
-			return Paths{}, &output.Error{Code: output.CodeIO, Message: "cannot resolve home: set KIE_CLI_HOME or HOME"}
+			return Paths{}, &output.Error{Code: output.CodeIO, Message: "cannot resolve home: set KIE_CLI_HOME, HOME or USERPROFILE"}
 		}
 		home = filepath.Join(h, ".kie-cli")
 	}
@@ -69,7 +81,8 @@ func Load(p Paths, warn io.Writer) (Config, error) {
 	if err != nil {
 		return Config{}, fmt.Errorf("stat %s: %w", p.Config, err)
 	}
-	if perm := fi.Mode().Perm(); perm&0o077 != 0 {
+	// Windows reports 0666 for every file, so the check is meaningless there.
+	if perm := fi.Mode().Perm(); goos != "windows" && perm&0o077 != 0 {
 		_, _ = fmt.Fprintf(warn, "warning: %s permissions are %04o, should be 0600\n", p.Config, perm)
 	}
 	data, err := os.ReadFile(p.Config)

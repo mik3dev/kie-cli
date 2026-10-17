@@ -211,3 +211,60 @@ func TestResolveKeyTrimsWhitespace(t *testing.T) {
 		t.Error("whitespace-only keys must count as unset")
 	}
 }
+
+func TestUserHome(t *testing.T) {
+	cases := []struct {
+		name string
+		env  map[string]string
+		want string
+	}{
+		{"home", map[string]string{"HOME": "/h"}, "/h"},
+		{"userprofile", map[string]string{"USERPROFILE": `C:\u`}, `C:\u`},
+		{"both prefers HOME", map[string]string{"HOME": "/h", "USERPROFILE": `C:\u`}, "/h"},
+		{"none", map[string]string{}, ""},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := config.UserHome(envOf(c.env)); got != c.want {
+				t.Errorf("got %q want %q", got, c.want)
+			}
+		})
+	}
+}
+
+func TestResolvePathsUserProfile(t *testing.T) {
+	dir := t.TempDir()
+	p, err := config.ResolvePaths(envOf(map[string]string{"KIE_CLI_HOME": "", "HOME": "", "USERPROFILE": dir}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := filepath.Join(dir, ".kie-cli"); p.Home != want {
+		t.Errorf("home = %q want %q", p.Home, want)
+	}
+}
+
+func TestLoadNoPermWarningOnWindows(t *testing.T) {
+	p := config.Paths{Config: filepath.Join(t.TempDir(), "config.json")}
+	if err := os.WriteFile(p.Config, []byte(`{}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(p.Config, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	restore := config.SetGOOS("windows")
+	var w bytes.Buffer
+	_, err := config.Load(p, &w)
+	restore()
+	if err != nil || w.Len() != 0 {
+		t.Fatalf("windows: err=%v warn=%q", err, w.String())
+	}
+	restore = config.SetGOOS("linux")
+	defer restore()
+	w.Reset()
+	if _, err := config.Load(p, &w); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(w.String(), "should be 0600") {
+		t.Errorf("linux: warn=%q", w.String())
+	}
+}
