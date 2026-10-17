@@ -38,8 +38,14 @@ func NewRoot(deps Deps) *cobra.Command {
 
 // Execute runs the CLI and returns the process exit code.
 func Execute(deps Deps, args []string) int {
-	root := NewRoot(deps)
+	return run(NewRoot(deps), deps, args)
+}
+
+func run(root *cobra.Command, deps Deps, args []string) int {
 	root.SetArgs(args)
+	// Run every PersistentPreRun in the chain so the root one always fires,
+	// even when a subcommand defines its own.
+	cobra.EnableTraverseRunHooks = true
 	started := false
 	root.PersistentPreRun = func(*cobra.Command, []string) { started = true }
 	err := root.Execute()
