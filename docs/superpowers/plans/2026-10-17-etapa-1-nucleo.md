@@ -77,7 +77,7 @@ func TestUnknownFlagIsUsageError(t *testing.T) {
 ```
 
 - [ ] **Step 2: Run** `go test ./...`. Expected: FAIL (paquetes inexistentes).
-- [ ] **Step 3: Implement** lo indicado en Interfaces. `go mod init github.com/mik3dev/kie-cli`, `go get github.com/spf13/cobra`. El Makefile tiene `build` (`go build -ldflags "-X github.com/mik3dev/kie-cli/internal/cli.Version=$(git describe --tags --always)" -o bin/kie-cli ./cmd/kie-cli`), `test` (`go test -race -cover ./...`) e `install`. `.gitignore` incluye `bin/`, `kie-output/` y `testdata/live/.raw/`.
+- [ ] **Step 3: Implement** lo indicado en Interfaces. `go mod init github.com/mik3dev/kie-cli`, `go get github.com/spf13/cobra`. El Makefile tiene `build` (`go build -ldflags "-X github.com/mik3dev/kie-cli/internal/cli.Version=$(git describe --tags --always)" -o bin/kie-cli ./cmd/kie-cli`), `test` (`go test -race -cover ./...`) e `install`. `.gitignore` ya existe (contiene `.env`, `.env.*` y `!.env.example`). Hay que **conservar esas líneas** y añadir `bin/`, `kie-output/` y `testdata/live/.raw/`.
 - [ ] **Step 4: Run** `go test -race ./...`. Expected: PASS.
 - [ ] **Step 5: Commit** `feat: scaffold kie-cli with JSON output contract and version`
 
@@ -158,10 +158,10 @@ func TestUnknownFlagIsUsageError(t *testing.T) {
 - Consumes: `api.New`, `api.Client.Do` con `ClassDiscovery`.
 - Produces: fixtures en `testdata/live/` usadas por las Tasks 5, 6 y 9. Se guarda solo `data` de cada respuesta, nunca headers ni la key.
 
-- [ ] **Step 1: Pedir al dueño que arranque la sesión con `KIE_API_KEY` exportada.** Verificar con `[ -n "$KIE_API_KEY" ] && echo set`. Si no está, **detenerse y avisar**: no hay que inventar fixtures.
+- [ ] **Step 1: Comprobar la key sin mostrarla.** La key está en `.env` (raíz del repo, gitignored). Verificar con `git check-ignore -q .env && grep -q '^KIE_API_KEY=.\+' .env && echo ok`. **Nunca** hacer `cat`, `Read` ni imprimir `.env`. Si no hay key, **detenerse y avisar**: no hay que inventar fixtures.
 - [ ] **Step 2: Implement** `scripts/capture/main.go`. Solo llama `GET /api/v1/models`, `GET /api/v1/models/{m}/schema` de cada modelo (slash sin codificar), `price` y `success-rate` de 5 modelos (1 imagen, 1 video, 1 suno, 1 tts y `veo-3-1` si existe) y `GET /api/v1/chat/credit`. **Prohibido** llamar `createTask`, upload o `download-url`. Escribe `REPORT.md` con el total de modelos, el conteo por `taskType`, los schemas `null`, los paths distintos de `/api/v1/jobs/createTask`, si aparecen `ai-music-api/`, `veo` y `runway`, y la lista de nombres de propiedad de `input` que contengan `url|image|video|audio|file|mask`.
-- [ ] **Step 3: Run** `go run ./scripts/capture -out testdata/live`. Expected: tarda unos 4 min y escribe los archivos. Comparar `credit.json` antes y después: debe quedar igual (cero créditos gastados).
-- [ ] **Step 4: Verify** con `grep -r "$KIE_API_KEY" testdata/live | wc -l`. Expected: `0`.
+- [ ] **Step 3: Run** `set -a; . ./.env; set +a; go run ./scripts/capture -out testdata/live`. Expected: tarda unos 4 min y escribe los archivos. Comparar `credit.json` antes y después: debe quedar igual (cero créditos gastados).
+- [ ] **Step 4: Verify** con `set -a; . ./.env; set +a; grep -rF "$KIE_API_KEY" testdata/live | wc -l`. Expected: `0`.
 - [ ] **Step 5: PUNTO DE CONTROL.** Mostrar `REPORT.md` al dueño. **Detenerse y consultar** si falta Suno, Veo o Runway en el catálogo, si más del 20% de los schemas son `null`, o si la forma de `data` difiere de `docs/research/kie-official-skill-reference.md`.
 - [ ] **Step 6: Commit** `test: capture live catalog and schemas as fixtures (read-only, 0 credits)`
 
