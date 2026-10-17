@@ -12,23 +12,35 @@ import (
 
 // newAPIClient resolves paths, config and key (auth error if missing) and builds a client.
 func newAPIClient(cmd *cobra.Command, deps Deps) (*api.Client, config.Paths, error) {
+	c, paths, _, err := newAPIClientCfg(cmd, deps)
+	return c, paths, err
+}
+
+// newAPIClientCfg is newAPIClient that also returns the loaded config.
+func newAPIClientCfg(cmd *cobra.Command, deps Deps) (*api.Client, config.Paths, config.Config, error) {
 	paths, err := config.ResolvePaths(deps.Env)
 	if err != nil {
-		return nil, paths, err
+		return nil, paths, config.Config{}, err
 	}
 	cfg, err := config.Load(paths, warnWriter(cmd, deps))
 	if err != nil {
-		return nil, paths, err
+		return nil, paths, cfg, err
 	}
 	key, _, err := config.ResolveKey(deps.Env, cfg)
 	if err != nil {
-		return nil, paths, err
+		return nil, paths, cfg, err
 	}
 	c := api.New(key, deps.Env)
+	if deps.Transport != nil {
+		c.HTTP.Transport = deps.Transport
+	}
+	if deps.Sleep != nil {
+		c.Sleep = deps.Sleep
+	}
 	if debug, _ := cmd.Flags().GetBool("debug"); debug {
 		c.Debug = deps.Stderr
 	}
-	return c, paths, nil
+	return c, paths, cfg, nil
 }
 
 func newCatalog(cmd *cobra.Command, deps Deps) (*catalog.Service, error) {

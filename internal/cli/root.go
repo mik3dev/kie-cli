@@ -2,8 +2,13 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"io"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/mik3dev/kie-cli/internal/api"
@@ -17,6 +22,10 @@ type Deps struct {
 	Stdin          io.Reader
 	Env            func(string) string
 	Now            func() time.Time
+	// Optional test seams: HTTP transport for the API/CDN client (e.g. a TLS
+	// fake's certs) and the sleep used by rate limiting and polling.
+	Transport http.RoundTripper
+	Sleep     func(context.Context, time.Duration) error
 }
 
 // NewRoot builds the root command. stdout carries JSON only.
@@ -34,13 +43,18 @@ func NewRoot(deps Deps) *cobra.Command {
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return &output.Error{Code: output.CodeUsage, Message: err.Error()}
 	})
-	root.AddCommand(newVersionCmd(deps), newAuthCmd(deps), newModelsCmd(deps), newCreditsCmd(deps), newTaskCmd(deps))
+	root.AddCommand(newVersionCmd(deps), newAuthCmd(deps), newModelsCmd(deps), newCreditsCmd(deps), newTaskCmd(deps), newRunCmd(deps))
 	return root
 }
 
 // Execute runs the CLI and returns the process exit code.
 func Execute(deps Deps, args []string) int {
-	return run(NewRoot(deps), deps, args)
+	// Ctrl-C cancels the context so a running wait can still report its taskId.
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+	root := NewRoot(deps)
+	root.SetContext(ctx)
+	return run(root, deps, args)
 }
 
 func run(root *cobra.Command, deps Deps, args []string) int {
