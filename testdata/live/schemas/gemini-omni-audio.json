@@ -1,0 +1,172 @@
+{
+  "model": "gemini-omni-audio",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/omni/audio/create": {
+        "post": {
+          "summary": "Gemini Omni Audio",
+          "deprecated": false,
+          "description": "Synchronous. Registers a voice preset and returns data.audioId immediately; no audio file is generated. Pass audioId in audio_ids of the video and character endpoints.\n\nReturns data.audioId. Pass it in audio_ids of gemini-omni-video, google/gemini-omni-flash-1-1 and gemini-omni-character.\n\n:::tip\nThis endpoint is free.\n:::\n\n## Related Resources\n\n<CardGroup cols={2}>\n  <Card title=\"Model Marketplace\" icon=\"lucide-store\" href=\"/market/quickstart\">\n    Explore all available models and capabilities\n  </Card>\n  <Card title=\"Common API\" icon=\"lucide-cog\" href=\"/common-api/get-account-credits\">\n    Check account credits and usage\n  </Card>\n</CardGroup>",
+          "operationId": "gemini-omni-audio",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "audio_id",
+                    "name"
+                  ],
+                  "properties": {
+                    "audio_id": {
+                      "type": "string",
+                      "description": "Enum voice ID, used to select a preset voice character.\n achernar - female, soft, high pitch \n  achird - male, friendly, mid pitch \n  algenib - male, raspy, low pitch \n algieba - male, easygoing, mid-low pitch  \n alnilam - male, steady, mid-low pitch \n aoede - female, brisk, mid pitch \n autonoe - female, bright, mid pitch \n callirrhoe - female, easygoing, mid pitch \n charon - male, intellectual, low pitch \n  despina - female, smooth, mid  pitch \n enceladus - male, breathy, low pitch \n erinome - female, clear, mid pitch \n fenrir -  male, lively, younger pitch \n gacrux - female, mature, mid pitch \n iapetus - male, clear, mid-low pitch \n kore - female, capable, mid pitch  \n  laomedeia - female, cheerful, mid-high pitch \n leda - female, young, mid-high pitch \n orus - male, steady, mid-low pitch \n puck - male, cheerful, mid pitch \n pulcherrima - genderless, forward, mid-high pitch \n rasalgethi - male, intellectual, mid pitch \n sadachbia -  male, vivid, low pitch \n sadaltager - male, knowledgeable, mid pitch \n  schedar - male, smooth, mid-low pitch \n sulafat - female, warm, mid pitch \n  umbriel - male, smooth, low pitch \n  vindemiatrix - female, gentle, mid pitch \n zephyr - female, bright, mid-high pitch \n zubenelgenubi -   male, casual, mid-low pitch",
+                      "examples": [
+                        "achernar",
+                        "achird",
+                        "algenib",
+                        "algieba",
+                        "alnilam",
+                        "aoede",
+                        "autonoe",
+                        "callirrhoe",
+                        "charon",
+                        "despina",
+                        "enceladus",
+                        "erinome",
+                        "fenrir",
+                        "gacrux",
+                        "iapetus",
+                        "kore",
+                        "laomedeia",
+                        "leda",
+                        "orus",
+                        "puck",
+                        "pulcherrima",
+                        "rasalgethi",
+                        "sadachbia",
+                        "sadaltager",
+                        "schedar",
+                        "sulafat",
+                        "umbriel",
+                        "vindemiatrix",
+                        "zephyr",
+                        "zubenelgenubi"
+                      ]
+                    },
+                    "name": {
+                      "type": "string",
+                      "description": "Voice name. Maximum length: `210` characters."
+                    },
+                    "voice_description": {
+                      "type": "string",
+                      "description": "Voice characteristic description used to define timbre, style, speaking rate, emotion, and other traits. Maximum length: `20000` characters."
+                    },
+                    "example_dialogue": {
+                      "type": "string",
+                      "description": "Example dialogue, such as \"Hello, I am Adam\". Maximum length: `120` characters."
+                    }
+                  }
+                },
+                "example": {
+                  "audio_id": "achernar",
+                  "name": "achernar Narrator",
+                  "voice_description": "A calm, clear, and friendly male voice suitable for tech explainers and daily conversation.",
+                  "example_dialogue": "Hello, I am achernar"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "integer",
+                            "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying)."
+                          },
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "audioId": {
+                                "type": "string"
+                              },
+                              "name": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "msg": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "audioId": "a8f1c2d3e4f5...",
+                      "name": "gentle female voice"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ]
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {},
+      "responses": {},
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

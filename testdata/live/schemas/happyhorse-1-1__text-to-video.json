@@ -1,0 +1,455 @@
+{
+  "model": "happyhorse-1-1/text-to-video",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "HappyHorse-1-1 text-to-video",
+          "deprecated": false,
+          "description": "\n## Query Task Status\nAfter submitting the task, you can check the progress of the task and obtain the generated results through the unified query endpoint: \n<Card title=\"Get Task Details\" icon=\"lucide-search\" href=\"/market/common/get-task-detail\">\n Learn how to check the task status and obtain the generated results \n</Card> \n\n::: tip[]\nIn the production environment, it is recommended to use the \"callBackUrl\" parameter to receive the automatic notification upon completion of the generation, rather than polling the status endpoint. \n:::\n\nRelated resources\n<CardGroup cols={2}>\n  <Card title=\"Market Overview\" icon=\"lucide-store\" href=\"/market/quickstart\"> View all available models </Card>\n  <Card title=\"General API\" icon=\"lucide-cog\" href=\"/common-api/get-account-credits\"> View account credits and usage </Card>\n</CardGroup>",
+          "operationId": "playground_253",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "model",
+                    "input"
+                  ],
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "enum": [
+                        "happyhorse-1-1/text-to-video"
+                      ],
+                      "default": "happyhorse-1-1/text-to-video",
+                      "description": "The model name used for generation. This endpoint must use `happyhorse-1-1/text-to-video`."
+                    },
+                    "callBackUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "The URL to receive generation task completion updates. Optional but recommended for production use.\n\n- System will POST task status and results to this URL when generation completes\n- Callback includes generated content URLs and task information\n- Your callback endpoint should accept POST requests with JSON payload containing results\n- Alternatively, use the Get Task Details endpoint to poll task status\n- To ensure callback security, see [Webhook Verification Guide](/common-api/webhook-verification) for signature verification implementation",
+                      "examples": [
+                        "https://your-domain.com/api/callback"
+                      ]
+                    },
+                    "input": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "description": "Input parameters for the generation task.",
+                      "properties": {
+                        "prompt": {
+                          "type": "string",
+                          "description": "Text description of the video to generate.  Supports any language. Maximum 5,000 non-Chinese characters or 2,500 Chinese",
+                          "maxLength": 5000,
+                          "examples": [
+                            "A dog running on the earth"
+                          ]
+                        },
+                        "resolution": {
+                          "type": "string",
+                          "enum": [
+                            "720p",
+                            "1080p"
+                          ],
+                          "description": "Output video resolution.\nOptions: 720p; 1080p",
+                          "default": "1080p",
+                          "examples": [
+                            "1080p"
+                          ]
+                        },
+                        "aspect_ratio": {
+                          "type": "string",
+                          "enum": [
+                            "16:9",
+                            "9:16",
+                            "1:1",
+                            "4:3",
+                            "3:4",
+                            "4:5",
+                            "5:4",
+                            "9:21",
+                            "21:9"
+                          ],
+                          "description": "Output video aspect ratio.\nOptions: 16:9; 9:16; 1:1; 4:3; 3:4; 4:5; 5:4; 9:21; 21:9",
+                          "default": "16:9",
+                          "examples": [
+                            "16:9"
+                          ]
+                        },
+                        "duration": {
+                          "type": "number",
+                          "description": "Output video duration in seconds. Integer, 3–15. Default 5.",
+                          "minimum": 3,
+                          "maximum": 15,
+                          "multipleOf": 1,
+                          "default": 5,
+                          "examples": [
+                            5
+                          ]
+                        }
+                      },
+                      "required": [
+                        "prompt"
+                      ]
+                    }
+                  }
+                },
+                "example": {
+                  "model": "happyhorse-1-1/text-to-video",
+                  "callBackUrl": "https://your-domain.com/api/callback",
+                  "input": {
+                    "prompt": "A dog running on the earth",
+                    "resolution": "1080p",
+                    "aspect_ratio": "16:9",
+                    "duration": 5
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request Successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "integer",
+                            "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+                            "enum": [
+                              200,
+                              401,
+                              402,
+                              404,
+                              422,
+                              429,
+                              433,
+                              455,
+                              500,
+                              501,
+                              505
+                            ]
+                          },
+                          "msg": {
+                            "type": "string",
+                            "description": "Response message, error description upon failure",
+                            "examples": [
+                              "success"
+                            ]
+                          },
+                          "data": {
+                            "type": "object",
+                            "required": [
+                              "taskId"
+                            ],
+                            "properties": {
+                              "taskId": {
+                                "type": "string",
+                                "description": "The task ID can be used with the \"Get Task Details\" endpoint to query the task status.",
+                                "examples": [
+                                  "dc1928bfcbc77cb6c85f3359a9c718b3"
+                                ]
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "data"
+                        ]
+                      }
+                    ]
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "taskId": "task_253_abc123"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ],
+          "callbacks": {
+            "videoTaskCompleted": {
+              "{request.body#/callBackUrl}": {
+                "post": {
+                  "description": "The system sends this callback when the `happyhorse-1-1/text-to-video` task succeeds or fails.",
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "required": [
+                            "code",
+                            "msg",
+                            "data"
+                          ],
+                          "properties": {
+                            "code": {
+                              "type": "integer",
+                              "description": "Unified callback code: 200 for success, 501 for failure.",
+                              "enum": [
+                                200,
+                                501
+                              ]
+                            },
+                            "msg": {
+                              "type": "string",
+                              "description": "Unified callback message.",
+                              "enum": [
+                                "Playground task completed successfully.",
+                                "Playground task failed."
+                              ]
+                            },
+                            "data": {
+                              "type": "object",
+                              "required": [
+                                "taskId",
+                                "model",
+                                "state",
+                                "param"
+                              ],
+                              "properties": {
+                                "taskId": {
+                                  "type": "string",
+                                  "description": "The unique task identifier."
+                                },
+                                "model": {
+                                  "type": "string",
+                                  "description": "The model used for the task.",
+                                  "enum": [
+                                    "happyhorse-1-1/text-to-video"
+                                  ]
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "description": "Terminal task state.",
+                                  "enum": [
+                                    "success",
+                                    "fail"
+                                  ]
+                                },
+                                "param": {
+                                  "type": "string",
+                                  "description": "JSON string containing the submitted task parameters."
+                                },
+                                "resultJson": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "JSON string containing resultUrls, firstFrameUrl, lastFrameUrl, or resultObject when successful. Present only when state is success."
+                                },
+                                "failCode": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Failure code, a numeric string such as \"400\" or \"500\". Present only when state is fail."
+                                },
+                                "failMsg": {
+                                  "type": "string",
+                                  "nullable": true,
+                                  "description": "Failure reason. Present only when state is fail."
+                                },
+                                "costTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Processing time in seconds. Present on both success and failure callbacks."
+                                },
+                                "completeTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task completion timestamp."
+                                },
+                                "createTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task creation timestamp."
+                                },
+                                "updateTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Use completeTime as the completion time; updateTime may equal createTime."
+                                },
+                                "creditsConsumed": {
+                                  "type": "number",
+                                  "description": "Credits consumed by the task; 0 for failed tasks."
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "examples": {
+                          "success": {
+                            "summary": "Task completed successfully",
+                            "value": {
+                              "code": 200,
+                              "msg": "Playground task completed successfully.",
+                              "data": {
+                                "taskId": "task_example_video_webhook_001",
+                                "model": "happyhorse-1-1/text-to-video",
+                                "state": "success",
+                                "param": "{\"input\":\"{\\\"prompt\\\":\\\"A dog running on the earth\\\",\\\"resolution\\\":\\\"1080p\\\",\\\"aspect_ratio\\\":\\\"16:9\\\",\\\"duration\\\":5}\",\"callBackUrl\":\"https://example.com/callback\",\"model\":\"happyhorse-1-1/text-to-video\"}",
+                                "resultJson": "{\"resultUrls\":[\"https://example.com/generated-video.mp4\"]}",
+                                "costTime": 12,
+                                "completeTime": 1234567890,
+                                "createTime": 1234560000,
+                                "updateTime": 1234567890,
+                                "creditsConsumed": 1.23
+                              }
+                            }
+                          },
+                          "failure": {
+                            "summary": "Task failed",
+                            "value": {
+                              "code": 501,
+                              "msg": "Playground task failed.",
+                              "data": {
+                                "taskId": "task_example_video_webhook_001",
+                                "model": "happyhorse-1-1/text-to-video",
+                                "state": "fail",
+                                "param": "{\"input\":\"{\\\"prompt\\\":\\\"A dog running on the earth\\\",\\\"resolution\\\":\\\"1080p\\\",\\\"aspect_ratio\\\":\\\"16:9\\\",\\\"duration\\\":5}\",\"callBackUrl\":\"https://example.com/callback\",\"model\":\"happyhorse-1-1/text-to-video\"}",
+                                "failCode": "400",
+                                "failMsg": "<error detail>",
+                                "costTime": 12,
+                                "creditsConsumed": 0
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Callback received successfully.",
+                      "content": {
+                        "application/json": {
+                          "schema": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "integer",
+                                "example": 200
+                              },
+                              "msg": {
+                                "type": "string",
+                                "example": "success"
+                              }
+                            }
+                          },
+                          "example": {
+                            "code": 200,
+                            "msg": "success"
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {
+        "response not with recordId": {
+          "type": "object",
+          "required": [
+            "data"
+          ],
+          "properties": {
+            "code": {
+              "type": "integer",
+              "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying).",
+              "enum": [
+                200,
+                401,
+                402,
+                404,
+                422,
+                429,
+                433,
+                455,
+                500,
+                501,
+                505
+              ]
+            },
+            "msg": {
+              "type": "string",
+              "description": "Response message, error description upon failure",
+              "examples": [
+                "success"
+              ]
+            },
+            "data": {
+              "type": "object",
+              "required": [
+                "taskId"
+              ],
+              "properties": {
+                "taskId": {
+                  "type": "string",
+                  "description": "The task ID can be used with the \"Get Task Details\" endpoint to query the task status.",
+                  "examples": [
+                    "dc1928bfcbc77cb6c85f3359a9c718b3"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "responses": {},
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

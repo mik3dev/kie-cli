@@ -1,0 +1,349 @@
+{
+  "model": "runway/extend-ai-video",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "Extend AI Video",
+          "deprecated": false,
+          "description": ":::warning\nThis is the new version of the API documentation; for the old version of the API, please see [https://docs.kie.ai/old-model/runway-api/extend-ai-video](https://docs.kie.ai/old-model/runway-api/extend-ai-video).\n:::\nExtend existing AI-generated videos to create longer sequences. The result is a single video containing the original clip followed by the continuation (about 5 seconds longer than the source).\n\n### Usage Guide\n- Add additional segments to your AI-generated videos\n- Maintain visual consistency while extending narratives\n- Create longer sequences for storytelling or demonstrations\n\n\n### Parameter Details\n- `task_id` identifies the original video to extend\n- `prompt` guides how the video should continue\n- `quality` video resolution, optional values are 720p or 1080p. \n- `watermark` video watermark text content, empty string means no watermark\n\n### Developer Notes\n- Extended videos are stored for 14 days before automatic deletion\n- Extension maintains the same aspect ratio as the original video\n- Extension works best when continuing the same subject/theme as the original video",
+          "operationId": "extend-ai-video",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "model",
+                    "input"
+                  ],
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "description": "Model name. Fixed: runway/extend-ai-video.",
+                      "default": "runway/extend-ai-video",
+                      "examples": [
+                        "runway/extend-ai-video"
+                      ]
+                    },
+                    "callBackUrl": {
+                      "type": "string",
+                      "description": "The URL to receive AI video extension task completion updates. Required for all video extension requests.\n\n- System will POST task status and results to this URL when video extension completes\n- Callback includes extended video URLs, cover images, and task information\n- Your callback endpoint should accept POST requests with JSON payload containing extension results\n- For detailed callback format and implementation guide, see [Video Extension Callbacks](https://docs.kie.ai/runway-api/extend-ai-video-callbacks)\n- Alternatively, poll Get Task Details (/market/common/get-task-detail).\n- To ensure callback security, see [Webhook Verification Guide](/common-api/webhook-verification) for signature verification implementation",
+                      "examples": [
+                        "https://api.example.com/callback"
+                      ]
+                    },
+                    "input": {
+                      "type": "object",
+                      "required": [
+                        "task_id",
+                        "prompt",
+                        "quality"
+                      ],
+                      "properties": {
+                        "task_id": {
+                          "type": "string",
+                          "description": "Unique identifier of the original video generation task. Must be a valid task ID from a previously generated video.",
+                          "examples": [
+                            "ee603959-debb-48d1-98c4-a6d1c717eba6"
+                          ]
+                        },
+                        "prompt": {
+                          "type": "string",
+                          "description": "Descriptive text that guides the continuation of the video. Explain what actions, movements, or developments should happen next. Be specific but maintain consistency with the original video content.",
+                          "examples": [
+                            "The cat continues dancing with more energy and excitement, spinning around with colorful light effects intensifying"
+                          ]
+                        },
+                        "quality": {
+                          "type": "string",
+                          "description": "Video resolution, optional values are 720p or 1080p. ",
+                          "examples": [
+                            "720p"
+                          ]
+                        },
+                        "watermark": {
+                          "type": "string",
+                          "description": "Video watermark text content. An empty string indicates no watermark, while a non-empty string will display the specified text as a watermark in the bottom right corner of the video.",
+                          "examples": [
+                            "kie.ai"
+                          ]
+                        }
+                      }
+                    }
+                  }
+                },
+                "example": {
+                  "model": "runway/extend-ai-video",
+                  "callBackUrl": "https://api.example.com/callback",
+                  "input": {
+                    "task_id": "ee603959-debb-48d1-98c4-a6d1c717eba6",
+                    "prompt": "The cat continues dancing with more energy and excitement, spinning around with colorful light effects intensifying",
+                    "quality": "720p",
+                    "watermark": "kie.ai"
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "integer",
+                            "enum": [
+                              200,
+                              401,
+                              404,
+                              422,
+                              429,
+                              451,
+                              455,
+                              500
+                            ],
+                            "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying)."
+                          },
+                          "msg": {
+                            "type": "string",
+                            "description": "Status message",
+                            "examples": [
+                              "success"
+                            ]
+                          },
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "taskId": {
+                                "type": "string",
+                                "description": "Task ID for tracking task status. Use this ID with the \"Get AI Video Details\" endpoint to query extension task details and results.",
+                                "examples": [
+                                  "5c79****be8e"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  },
+                  "example": {
+                    "code": 200,
+                    "msg": "success",
+                    "data": {
+                      "taskId": "ee603959-debb-48d1-98c4-a6d1c717eba6"
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "500": {
+              "$ref": "#/components/responses/Error",
+              "description": "Server error."
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ],
+          "callbacks": {
+            "onVideoExtended": {
+              "{$request.body#/callBackUrl}": {
+                "post": {
+                  "summary": "Video Extension Completion Callback",
+                  "description": "When video extension is complete, the system will send a POST request to the provided callback URL to notify the result",
+                  "requestBody": {
+                    "required": true,
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "integer",
+                              "enum": [
+                                200,
+                                501
+                              ],
+                              "description": "Status code\n\n- **200**: Success - the task completed successfully\n- **501**: Failed - the task failed; see data.failCode and data.failMsg"
+                            },
+                            "msg": {
+                              "type": "string",
+                              "description": "Status message",
+                              "example": "Playground task completed successfully."
+                            },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "taskId": {
+                                  "type": "string",
+                                  "description": "Task ID",
+                                  "example": "d6cf9fc7968af5ccd85688083f565757"
+                                },
+                                "model": {
+                                  "type": "string",
+                                  "description": "Model used for the task",
+                                  "example": "runway/extend-ai-video"
+                                },
+                                "state": {
+                                  "type": "string",
+                                  "enum": [
+                                    "success",
+                                    "fail"
+                                  ],
+                                  "description": "Task status",
+                                  "example": "success"
+                                },
+                                "param": {
+                                  "type": "string",
+                                  "description": "Parameters submitted when creating the task, in JSON string format",
+                                  "example": "{\"input\":\"{\\\"task_id\\\":\\\"94bbfeaa1383c296cd61ba5dfcbfe30e\\\",\\\"prompt\\\":\\\"The cartoon fox steps back and admires the finished rainbow\\\",\\\"quality\\\":\\\"720p\\\"}\",\"callBackUrl\":\"https://your-domain.com/api/callback\",\"model\":\"runway/extend-ai-video\"}"
+                                },
+                                "resultJson": {
+                                  "type": "string",
+                                  "description": "Result in JSON string format (present when state is success). resultUrls contains the generated video URLs.",
+                                  "example": "{\"resultUrls\":[\"https://tempfile.aiquickdraw.com/p/d6cf9fc7968af5ccd85688083f565757_1_1791218886_3642.mp4\"]}"
+                                },
+                                "failCode": {
+                                  "type": "string",
+                                  "description": "Failure code (present when state is fail)"
+                                },
+                                "failMsg": {
+                                  "type": "string",
+                                  "description": "Failure reason (present when state is fail)"
+                                },
+                                "costTime": {
+                                  "type": "integer",
+                                  "description": "Task duration in seconds",
+                                  "example": 85
+                                },
+                                "creditsConsumed": {
+                                  "type": "number",
+                                  "format": "double",
+                                  "description": "Number of credits consumed by the task",
+                                  "example": 12
+                                },
+                                "createTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task creation time, Unix timestamp in milliseconds",
+                                  "example": 1791218802000
+                                },
+                                "completeTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Task completion time, Unix timestamp in milliseconds",
+                                  "example": 1791218887652
+                                },
+                                "updateTime": {
+                                  "type": "integer",
+                                  "format": "int64",
+                                  "description": "Last task update time, Unix timestamp in milliseconds",
+                                  "example": 1791218887652
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Callback received successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {},
+      "responses": {
+        "Error": {
+          "description": "Server error.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **401**: Unauthorized - Authentication credentials are missing or invalid\n- **402**: Insufficient Credits - Account does not have enough credits to perform the operation\n- **404**: Not Found - The requested resource or endpoint does not exist\n- **408**: Timeout - No result has been returned for over 10 minutes.\n- **422**: Validation Error - The request parameters failed validation checks\n- **429**: Rate Limited - Request limit has been exceeded for this resource\n- **455**: Service Unavailable - System is currently undergoing maintenance\n- **500**: Server Error - An unexpected error occurred while processing the request\n- **501**: Generation Failed - Content generation task failed\n- **505**: Feature Disabled - The requested feature is currently disabled"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "description": "Response message, error description when failed"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              },
+              "examples": {
+                "Example 1": {
+                  "summary": "Example 1",
+                  "value": {
+                    "code": 500,
+                    "msg": "Server Error - An unexpected error occurred while processing the request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

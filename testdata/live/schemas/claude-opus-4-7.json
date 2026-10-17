@@ -1,0 +1,520 @@
+{
+  "model": "claude-opus-4-7",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/claude/v1/messages": {
+        "post": {
+          "summary": "Claude Opus 4.7",
+          "deprecated": false,
+          "description": "### Streaming Support\n\nWhen `stream: true` is set in the request, the API returns responses as server-sent events (SSE). Claude tool calling responses stream `tool_use` blocks and `input_json_delta` fragments.\n\n**Streaming Response Format:**\n- Content-Type: `text/event-stream`\n- Event names include `message_start`, `content_block_start`, `content_block_delta`, `message_delta`, and `message_stop`\n- Tool calls are emitted as `tool_use` content blocks\n- Final stop reason is often `tool_use` for function-calling requests\n\n## Features\n\n- Standard chat with `messages`.\n- Function calling with `tools` and `input_schema`.\n- Optional stream response with Claude events.\n- Optional thinking flag (`thinkingFlag`).\n\n\n## Request Notes\n\n- Put the current model name in the `model` field.\n- Use `messages` for conversation history.\n- Use `tools` to declare callable functions.\n- Set `stream` to `true` for SSE output.\n\n## Authentication\n\nAuthentication: send `Authorization: Bearer YOUR_API_KEY`. Clients that send `x-api-key` (such as the Anthropic SDK) must set it to `Bearer YOUR_API_KEY`. `anthropic-version` is optional.",
+          "operationId": "claude_opus_4_7",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "description": "Model id for this page, e.g. `claude-opus-4-7`. Available ids are listed by `GET https://api.kie.ai/anthropic/v1/models`.",
+                      "enum": [
+                        "claude-opus-4-7"
+                      ],
+                      "examples": [
+                        "claude-opus-4-7"
+                      ]
+                    },
+                    "messages": {
+                      "type": "array",
+                      "description": "Conversation messages in chronological order.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "user",
+                              "assistant"
+                            ],
+                            "description": "Message role.",
+                            "examples": [
+                              "user"
+                            ]
+                          },
+                          "content": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "description": "Plain text content."
+                              },
+                              {
+                                "type": "array",
+                                "description": "Structured content blocks.",
+                                "items": {
+                                  "type": "object",
+                                  "additionalProperties": true,
+                                  "properties": {}
+                                }
+                              }
+                            ],
+                            "description": "Message content.",
+                            "examples": [
+                              "What is the weather like in Boston today?"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "content"
+                        ]
+                      },
+                      "minItems": 1
+                    },
+                    "tools": {
+                      "type": "array",
+                      "description": "Optional callable tools. Each tool includes a name, description, and input_schema.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string",
+                            "description": "Function name.",
+                            "examples": [
+                              "get_current_weather"
+                            ]
+                          },
+                          "description": {
+                            "type": "string",
+                            "description": "Human-readable function description.",
+                            "examples": [
+                              "Get the current weather in a given location"
+                            ]
+                          },
+                          "input_schema": {
+                            "type": "object",
+                            "description": "JSON Schema for function parameters.",
+                            "properties": {
+                              "type": {
+                                "type": "string",
+                                "description": "Schema type.",
+                                "examples": [
+                                  "object"
+                                ]
+                              },
+                              "properties": {
+                                "type": "object",
+                                "description": "Function parameter definitions.",
+                                "additionalProperties": true,
+                                "properties": {}
+                              },
+                              "required": {
+                                "type": "array",
+                                "description": "Required parameter names.",
+                                "items": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "examples": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "location": {
+                                    "type": "string",
+                                    "description": "The city and state, e.g. Boston, MA"
+                                  }
+                                },
+                                "required": [
+                                  "location"
+                                ]
+                              }
+                            ]
+                          }
+                        },
+                        "required": [
+                          "name",
+                          "description",
+                          "input_schema"
+                        ]
+                      }
+                    },
+                    "thinkingFlag": {
+                      "type": "boolean",
+                      "description": "Whether to enable thinking.",
+                      "examples": [
+                        true
+                      ]
+                    },
+                    "stream": {
+                      "type": "boolean",
+                      "default": true,
+                      "description": "If set to true, the response is returned as an SSE stream.",
+                      "examples": [
+                        false
+                      ]
+                    },
+                    "max_tokens": {
+                      "type": "number",
+                      "default": 4096,
+                      "examples": [
+                        4096
+                      ],
+                      "description": "Optional Claude output token limit. Leave empty to use the default of 4096."
+                    }
+                  },
+                  "required": [
+                    "model",
+                    "messages"
+                  ],
+                  "examples": [
+                    {
+                      "model": "claude-opus-4-7",
+                      "messages": [
+                        {
+                          "role": "user",
+                          "content": "What is the weather like in Boston today?"
+                        }
+                      ],
+                      "tools": [
+                        {
+                          "name": "get_current_weather",
+                          "description": "Get the current weather in a given location",
+                          "input_schema": {
+                            "type": "object",
+                            "properties": {
+                              "location": {
+                                "type": "string",
+                                "description": "The city and state, e.g. Boston, MA"
+                              }
+                            },
+                            "required": [
+                              "location"
+                            ]
+                          }
+                        }
+                      ],
+                      "thinkingFlag": true,
+                      "stream": false
+                    }
+                  ]
+                },
+                "example": {
+                  "model": "claude-opus-4-7",
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": "What is the weather like in Boston today?"
+                    }
+                  ],
+                  "tools": [
+                    {
+                      "name": "get_current_weather",
+                      "description": "Get the current weather in a given location",
+                      "input_schema": {
+                        "type": "object",
+                        "properties": {
+                          "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g. Boston, MA"
+                          }
+                        },
+                        "required": [
+                          "location"
+                        ]
+                      }
+                    }
+                  ],
+                  "thinkingFlag": true,
+                  "stream": false,
+                  "max_tokens": 4096
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "role": {
+                        "type": "string",
+                        "description": "Returned message role",
+                        "examples": [
+                          "assistant"
+                        ]
+                      },
+                      "usage": {
+                        "type": "object",
+                        "description": "Usage information returned in the response",
+                        "properties": {
+                          "input_tokens": {
+                            "type": "integer",
+                            "description": "Input token count",
+                            "examples": [
+                              600
+                            ]
+                          },
+                          "output_tokens": {
+                            "type": "integer",
+                            "description": "Output token count",
+                            "examples": [
+                              57
+                            ]
+                          },
+                          "cache_creation_input_tokens": {
+                            "type": "integer",
+                            "description": "Cache creation input token count",
+                            "examples": [
+                              0
+                            ]
+                          },
+                          "cache_read_input_tokens": {
+                            "type": "integer",
+                            "description": "Cache read input token count",
+                            "examples": [
+                              0
+                            ]
+                          },
+                          "service_tier": {
+                            "type": "string",
+                            "description": "Service tier",
+                            "examples": [
+                              "standard"
+                            ]
+                          }
+                        }
+                      },
+                      "stop_reason": {
+                        "type": "string",
+                        "description": "Reason why generation stopped",
+                        "examples": [
+                          "tool_use"
+                        ]
+                      },
+                      "model": {
+                        "type": "string",
+                        "description": "Actual model version returned in the response",
+                        "examples": [
+                          "claude-opus-4-5-20251101"
+                        ]
+                      },
+                      "id": {
+                        "type": "string",
+                        "description": "Unique message identifier",
+                        "examples": [
+                          "msg_01VSoxV4a8YWB3DBh9TdM63W"
+                        ]
+                      },
+                      "credits_consumed": {
+                        "type": "number",
+                        "description": "Credits consumed by the request",
+                        "examples": [
+                          0.25
+                        ]
+                      },
+                      "type": {
+                        "type": "string",
+                        "description": "Top-level response object type",
+                        "examples": [
+                          "message"
+                        ]
+                      },
+                      "content": {
+                        "type": "array",
+                        "description": "Response content blocks",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "input": {
+                              "type": "object",
+                              "description": "Tool input arguments",
+                              "additionalProperties": true,
+                              "properties": {}
+                            },
+                            "caller": {
+                              "type": "object",
+                              "description": "Tool caller metadata",
+                              "properties": {
+                                "type": {
+                                  "type": "string",
+                                  "examples": [
+                                    "direct"
+                                  ]
+                                }
+                              }
+                            },
+                            "name": {
+                              "type": "string",
+                              "description": "Tool name",
+                              "examples": [
+                                "get_current_weather"
+                              ]
+                            },
+                            "id": {
+                              "type": "string",
+                              "description": "Tool call identifier",
+                              "examples": [
+                                "toolu_018gdqs2FHxrRjQHLZv1qvbF"
+                              ]
+                            },
+                            "type": {
+                              "type": "string",
+                              "description": "Content block type",
+                              "examples": [
+                                "tool_use"
+                              ]
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "example": {
+                    "role": "assistant",
+                    "usage": {
+                      "cache_creation": {
+                        "ephemeral_1h_input_tokens": 0,
+                        "ephemeral_5m_input_tokens": 0
+                      },
+                      "output_tokens": 57,
+                      "service_tier": "standard",
+                      "cache_creation_input_tokens": 0,
+                      "input_tokens": 600,
+                      "cache_read_input_tokens": 0,
+                      "inference_geo": "not_available"
+                    },
+                    "stop_reason": "tool_use",
+                    "model": "claude-opus-4-7",
+                    "id": "msg_01VSoxV4a8YWB3DBh9TdM63W",
+                    "credits_consumed": 0.25,
+                    "type": "message",
+                    "content": [
+                      {
+                        "input": {
+                          "location": "Beijing, China"
+                        },
+                        "caller": {
+                          "type": "direct"
+                        },
+                        "name": "get_current_weather",
+                        "id": "toolu_018gdqs2FHxrRjQHLZv1qvbF",
+                        "type": "tool_use"
+                      }
+                    ]
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "400": {
+              "description": "Bad Request - Invalid request parameters",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string",
+                            "examples": [
+                              "Invalid request parameters"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "examples": [
+                              "invalid_request_error"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "401": {
+              "description": "Unauthorized - Invalid or missing API key",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string",
+                            "examples": [
+                              "Invalid or missing API key"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "examples": [
+                              "authentication_error"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ]
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {},
+      "responses": {},
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

@@ -1,0 +1,522 @@
+{
+  "model": "gpt-5-2",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/gpt-5-2/v1/chat/completions": {
+        "post": {
+          "summary": "GPT 5.2",
+          "deprecated": false,
+          "description": ":::warning\n**⚠️ Chat only**\n\nThis model currently supports chat requests only and has not yet been adapted for agent use. Connecting it to an agent may cause request errors or unexpected results.\n:::\n\n> GPT-5-2 API is a next-generation multimodal model with exceptional reasoning capabilities, supporting text and image inputs with Web Search grounding and adjustable reasoning effort.\n\n<CardGroup cols={2}>\n  <Card title=\"Multimodal\" icon=\"lucide-image\">\n    Supports text and image inputs\n  </Card>\n  <Card title=\"Real-time Search\" icon=\"lucide-search\">\n    Web search grounding enabled\n  </Card>\n  <Card title=\"Reasoning Effort\" icon=\"lucide-list-minus\">\n    Adjustable reasoning effort level\n  </Card>\n  <Card title=\"Flexible Roles\" icon=\"lucide-users\">\n    Multiple message roles supported\n  </Card>\n</CardGroup>\n\n## Unified Media File Format\n\n:::caution\n\nIn the `messages` parameter's `content` array, only images are supported. All image files use the same format structure:\n\n- The `type` field is always `\"image_url\"`\n- The `image_url` field name remains unchanged\n- The only thing that changes is the `url` value, which points to the corresponding image address\n\nFor example: `{ type: 'image_url', image_url: { url: '...' } }` structure.\n\n:::\n\n## Tools Parameter\n\nThe `tools` parameter is an optional array that allows you to enable Web Search grounding.\n\n### Web Search\n\nUse this format to enable Web Search grounding:\n\n```json\n{\n  \"type\": \"function\",\n  \"function\": {\n    \"name\": \"web_search\"\n  }\n}\n```\n\nThis enables real-time information retrieval via Web Search.\n\n## Response Example\n\n```json\n{\n  \"id\": \"chatcmpl-example-123\",\n  \"object\": \"chat.completion\",\n  \"created\": 1741569952,\n  \"model\": \"gpt-5-2\",\n  \"choices\": [\n    {\n      \"index\": 0,\n      \"message\": {\n        \"role\": \"assistant\",\n        \"content\": \"hello,can i help you?\",\n        \"refusal\": null,\n        \"annotations\": []\n      },\n      \"logprobs\": null,\n      \"finish_reason\": \"stop\"\n    }\n  ],\n  \"usage\": {\n    \"prompt_tokens\": 10,\n    \"completion_tokens\": 50,\n    \"total_tokens\": 60\n  }\n}\n```\n\n## Error handling\n\nCheck the response body, not only the HTTP status. Errors are returned either as `{\"code\": ..., \"msg\": \"...\"}` (for example 401 invalid API key, 402 insufficient credits, 429 rate limited; the HTTP status may still be 200) or as `{\"error\": {\"type\": \"...\", \"message\": \"...\"}}`.\n",
+          "operationId": "gpt-5-2-chat-completions",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "messages": {
+                      "type": "array",
+                      "description": "An array of message objects. Each message has a role and content.\n\n**Unified Media File Format:**\n\nIn the content array, only images are supported. All image files use the same format structure:\n\n- The `type` field is always `\"image_url\"`\n- The `image_url` field name remains unchanged\n- The only thing that changes is the `url` value, which points to the corresponding image address\n\nFor example: `{ type: 'image_url', image_url: { url: '...' } }` structure.",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "role": {
+                            "type": "string",
+                            "enum": [
+                              "developer",
+                              "system",
+                              "user",
+                              "assistant"
+                            ],
+                            "description": "Message role\n\n- **developer**: Developer-provided instructions that the model should follow, regardless of user messages. In o1 models and newer versions, developer messages replace the previous system messages.\n- **system**: Developer-provided instructions that the model should follow, regardless of user messages. In o1 models and newer versions, please use developer messages instead.\n- **user**: Messages sent by end users, containing prompts or additional context information.\n- **assistant**: Messages sent by the model in response to user messages."
+                          },
+                          "content": {
+                            "type": "array",
+                            "description": "Text and image parts only.",
+                            "items": {
+                              "oneOf": [
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "text"
+                                      ],
+                                      "examples": [
+                                        "text"
+                                      ]
+                                    },
+                                    "text": {
+                                      "type": "string",
+                                      "description": "Text content of the message."
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "text"
+                                  ]
+                                },
+                                {
+                                  "type": "object",
+                                  "properties": {
+                                    "type": {
+                                      "type": "string",
+                                      "enum": [
+                                        "image_url"
+                                      ],
+                                      "examples": [
+                                        "image_url"
+                                      ]
+                                    },
+                                    "image_url": {
+                                      "type": "object",
+                                      "properties": {
+                                        "url": {
+                                          "type": "string",
+                                          "format": "uri",
+                                          "description": "URL of the image."
+                                        }
+                                      },
+                                      "required": [
+                                        "url"
+                                      ]
+                                    }
+                                  },
+                                  "required": [
+                                    "type",
+                                    "image_url"
+                                  ]
+                                }
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "role",
+                          "content"
+                        ]
+                      },
+                      "minItems": 1
+                    },
+                    "tools": {
+                      "type": "array",
+                      "description": "An optional array of tools the model may call. Supports Web Search: `{\"type\": \"function\", \"function\": {\"name\": \"web_search\"}}` - Enables real-time information retrieval via Web Search.",
+                      "items": {
+                        "type": "object",
+                        "description": "Only the built-in web search is supported: {\"type\":\"function\",\"function\":{\"name\":\"web_search\"}}.",
+                        "properties": {
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "function"
+                            ],
+                            "description": "Must be `function`.",
+                            "examples": [
+                              "function"
+                            ]
+                          },
+                          "function": {
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "type": "string",
+                                "enum": [
+                                  "web_search"
+                                ],
+                                "description": "Must be `web_search`.",
+                                "examples": [
+                                  "web_search"
+                                ]
+                              }
+                            },
+                            "required": [
+                              "name"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "type",
+                          "function"
+                        ]
+                      },
+                      "minItems": 0
+                    },
+                    "reasoning_effort": {
+                      "type": "string",
+                      "enum": [
+                        "low",
+                        "high"
+                      ],
+                      "description": "The effort level for the model to use for reasoning. Low effort is faster to respond, high effort is slower to respond but solves more complex problems. Default is \"high\".",
+                      "default": "high"
+                    }
+                  },
+                  "required": [
+                    "messages"
+                  ],
+                  "examples": [
+                    {
+                      "messages": [
+                        {
+                          "role": "user",
+                          "content": [
+                            {
+                              "type": "text",
+                              "text": "What is in this image?"
+                            },
+                            {
+                              "type": "image_url",
+                              "image_url": {
+                                "url": "https://file.aiquickdraw.com/custom-page/akr/section-images/1759055072437dqlsclj2.png"
+                              }
+                            }
+                          ]
+                        }
+                      ],
+                      "tools": [
+                        {
+                          "type": "function",
+                          "function": {
+                            "name": "web_search"
+                          }
+                        }
+                      ],
+                      "reasoning_effort": "high"
+                    }
+                  ]
+                },
+                "example": {
+                  "messages": [
+                    {
+                      "role": "user",
+                      "content": [
+                        {
+                          "type": "text",
+                          "text": "What is in this image?"
+                        },
+                        {
+                          "type": "image_url",
+                          "image_url": {
+                            "url": "https://file.aiquickdraw.com/custom-page/akr/section-images/1759055072437dqlsclj2.png"
+                          }
+                        }
+                      ]
+                    }
+                  ],
+                  "tools": [
+                    {
+                      "type": "function",
+                      "function": {
+                        "name": "web_search"
+                      }
+                    }
+                  ],
+                  "reasoning_effort": "high"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful. Returns the standard chat completion format.",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string",
+                        "description": "Unique identifier for the chat completion",
+                        "examples": [
+                          "chatcmpl-example-123"
+                        ]
+                      },
+                      "object": {
+                        "type": "string",
+                        "description": "Object type",
+                        "examples": [
+                          "chat.completion"
+                        ]
+                      },
+                      "created": {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "Unix timestamp of when the completion was created",
+                        "examples": [
+                          1677652288
+                        ]
+                      },
+                      "model": {
+                        "type": "string",
+                        "description": "Model name",
+                        "examples": [
+                          "gpt-5-2"
+                        ]
+                      },
+                      "choices": {
+                        "type": "array",
+                        "description": "Array of completion choices",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "index": {
+                              "type": "integer",
+                              "description": "Index of the choice",
+                              "examples": [
+                                0
+                              ]
+                            },
+                            "message": {
+                              "type": "object",
+                              "properties": {
+                                "role": {
+                                  "type": "string",
+                                  "examples": [
+                                    "assistant"
+                                  ]
+                                },
+                                "content": {
+                                  "type": "string",
+                                  "description": "Message content"
+                                }
+                              },
+                              "required": [
+                                "role",
+                                "content"
+                              ]
+                            },
+                            "finish_reason": {
+                              "type": "string",
+                              "description": "Reason why the completion finished",
+                              "examples": [
+                                "stop"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "index",
+                            "message",
+                            "finish_reason"
+                          ]
+                        }
+                      },
+                      "usage": {
+                        "type": "object",
+                        "properties": {
+                          "prompt_tokens": {
+                            "type": "integer",
+                            "description": "Number of tokens in the prompt",
+                            "examples": [
+                              10
+                            ]
+                          },
+                          "completion_tokens": {
+                            "type": "integer",
+                            "description": "Number of tokens in the completion",
+                            "examples": [
+                              50
+                            ]
+                          },
+                          "total_tokens": {
+                            "type": "integer",
+                            "description": "Total number of tokens",
+                            "examples": [
+                              60
+                            ]
+                          }
+                        },
+                        "required": [
+                          "prompt_tokens",
+                          "completion_tokens",
+                          "total_tokens"
+                        ]
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "400": {
+              "description": "Bad Request - Invalid request parameters",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string",
+                            "examples": [
+                              "Invalid request parameters"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "examples": [
+                              "invalid_request_error"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "401": {
+              "description": "Unauthorized - Invalid or missing API key",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string",
+                            "examples": [
+                              "Unauthorized"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "examples": [
+                              "authentication_error"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "429": {
+              "description": "Rate Limited - Too many requests",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "properties": {
+                      "error": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string",
+                            "examples": [
+                              "Rate limit exceeded"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "examples": [
+                              "rate_limit_error"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "500": {
+              "$ref": "#/components/responses/Error",
+              "description": "Server error."
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ]
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {},
+      "responses": {
+        "Error": {
+          "description": "Server error.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **401**: Unauthorized - Authentication credentials are missing or invalid\n- **402**: Insufficient Credits - Account does not have enough credits to perform the operation\n- **404**: Not Found - The requested resource or endpoint does not exist\n- **408**: Timeout - No result has been returned for over 10 minutes.\n- **422**: Validation Error - The request parameters failed validation checks\n- **429**: Rate Limited - Request limit has been exceeded for this resource\n- **455**: Service Unavailable - System is currently undergoing maintenance\n- **500**: Server Error - An unexpected error occurred while processing the request\n- **501**: Generation Failed - Content generation task failed\n- **505**: Feature Disabled - The requested feature is currently disabled"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "description": "Response message, error description when failed"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              },
+              "examples": {
+                "Example 1": {
+                  "summary": "Example 1",
+                  "value": {
+                    "code": 500,
+                    "msg": "Server Error - An unexpected error occurred while processing the request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}

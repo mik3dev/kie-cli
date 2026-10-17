@@ -1,0 +1,305 @@
+{
+  "model": "ai-music-api/convert-to-wav-format",
+  "openapi": {
+    "openapi": "3.1.0",
+    "info": {
+      "title": "kie.ai",
+      "description": "kie.ai API 文档",
+      "version": "1.0.0",
+      "contact": {
+        "name": "技术支持",
+        "email": "support@kie.ai"
+      }
+    },
+    "tags": [],
+    "paths": {
+      "/api/v1/jobs/createTask": {
+        "post": {
+          "summary": "Convert to WAV Format",
+          "deprecated": false,
+          "description": ":::warning Document updated\nIf you have already completed the integration process previously, you can still access the old version document at: Old version address (https://docs.kie.ai/old-model/suno-api/convert-to-wav)\n:::\nConvert an existing music track to high-quality WAV format.\n\n### Usage Guide\n- Use this endpoint to obtain WAV format files from your generated music\n- WAV files provide uncompressed audio for professional editing and processing\n- Converted files maintain the full quality of the original audio\n\n### Parameter Details\n- `task_id` identifies the original music generation task\n- `audio_id` specifies which audio track to convert when multiple variations exist\n\n### Developer Notes\n- Generated WAV files are retained for 14 days\n- WAV files are typically 5-10 times larger than MP3 equivalents\n- Processing time may vary depending on the length of the original audio\n- When polling GET /api/v1/jobs/recordInfo, the file URL is resultJson.resultUrls[0] (the callback uses audio_wav_url / video_url).\n",
+          "operationId": "convert-to-wav",
+          "tags": [],
+          "parameters": [],
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "model",
+                    "input"
+                  ],
+                  "properties": {
+                    "model": {
+                      "type": "string",
+                      "description": "The model name to use for generation. Required field.",
+                      "examples": [
+                        "ai-music-api/convert-to-wav-format"
+                      ]
+                    },
+                    "callBackUrl": {
+                      "type": "string",
+                      "format": "uri",
+                      "description": "The URL to receive generation task completion updates. Optional but recommended for production use.\n\n- System will POST task status and results to this URL when generation completes\n- Callback includes generated content URLs and task information\n- Your callback endpoint should accept POST requests with JSON payload containing results\n- Alternatively, use the Get Task Details endpoint to poll task status\n- To ensure callback security, see [Webhook Verification Guide](/common-api/webhook-verification) for signature verification implementation",
+                      "examples": [
+                        "https://api.example.com/callback"
+                      ]
+                    },
+                    "input": {
+                      "type": "object",
+                      "description": "Input parameters for the generation task",
+                      "properties": {
+                        "task_id": {
+                          "type": "string",
+                          "description": "Unique identifier of the music generation task. This should be a task_id returned from either the \"Generate Music\" or \"Extend Music\" endpoints.",
+                          "examples": [
+                            "5c79****be8e"
+                          ]
+                        },
+                        "audio_id": {
+                          "type": "string",
+                          "description": "Unique identifier of the specific audio track to convert. This ID is returned in the callBackUrl data after music generation completes.",
+                          "examples": [
+                            "e231****-****-****-****-****8cadc7dc"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "task_id",
+                        "audio_id"
+                      ]
+                    }
+                  }
+                },
+                "example": {
+                  "model": "ai-music-api/convert-to-wav-format",
+                  "callBackUrl": "https://api.example.com/callback",
+                  "input": {
+                    "task_id": "5c79****be8e",
+                    "audio_id": "e231****-****-****-****-****8cadc7dc"
+                  }
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Request successful",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "allOf": [
+                      {
+                        "type": "object",
+                        "properties": {
+                          "code": {
+                            "type": "integer",
+                            "enum": [
+                              200,
+                              400,
+                              401,
+                              402,
+                              404,
+                              409,
+                              422,
+                              429,
+                              455,
+                              500
+                            ],
+                            "description": "Status code of the request. The HTTP status is 200 even when the request fails, so always check this field: 200 means success; any other value means the request failed and msg describes the reason. Common values: 401 invalid or missing API key; 402 insufficient credits; 429 rate limit exceeded; 422 or 500 the request could not be processed (read msg and check your parameters before retrying). If this track has already been converted, the request returns code 422 and data contains the existing taskId and audioWavUrl; no credits are charged."
+                          },
+                          "msg": {
+                            "type": "string",
+                            "description": "Error message when code != 200",
+                            "examples": [
+                              "success"
+                            ]
+                          }
+                        }
+                      },
+                      {
+                        "type": "object",
+                        "properties": {
+                          "data": {
+                            "type": "object",
+                            "properties": {
+                              "taskId": {
+                                "type": "string",
+                                "description": "Task ID for tracking task status",
+                                "examples": [
+                                  "5c79****be8e"
+                                ]
+                              }
+                            }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }
+              },
+              "headers": {}
+            },
+            "500": {
+              "$ref": "#/components/responses/Error",
+              "description": "Server error."
+            }
+          },
+          "security": [
+            {
+              "BearerAuth": []
+            }
+          ],
+          "callbacks": {
+            "wavGenerated": {
+              "{$request.body#/callBackUrl}": {
+                "post": {
+                  "description": "System will call this callback when WAV format audio generation is complete.\n\n### Callback Example\n```json\n{\n  \"code\": 200,\n  \"msg\": \"success\",\n  \"data\": {\n    \"audio_wav_url\": \"https://example.com/s/04e6****e727.wav\",\n    \"task_id\": \"988e****c8d3\"\n  }\n}\n```",
+                  "requestBody": {
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "allOf": [
+                            {
+                              "type": "object",
+                              "properties": {
+                                "code": {
+                                  "type": "integer",
+                                  "enum": [
+                                    200,
+                                    500
+                                  ],
+                                  "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **500**: Internal Error - Please try again later."
+                                },
+                                "msg": {
+                                  "type": "string",
+                                  "description": "Error message when code != 200",
+                                  "example": "success"
+                                }
+                              }
+                            },
+                            {
+                              "type": "object",
+                              "properties": {
+                                "data": {
+                                  "type": "object",
+                                  "properties": {
+                                    "taskId": {
+                                      "type": "string",
+                                      "description": "Task ID for tracking task status",
+                                      "example": "5c79****be8e"
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          ],
+                          "type": "object",
+                          "properties": {
+                            "code": {
+                              "type": "integer",
+                              "description": "Status code",
+                              "example": 200
+                            },
+                            "msg": {
+                              "type": "string",
+                              "description": "Response message",
+                              "example": "success"
+                            },
+                            "data": {
+                              "type": "object",
+                              "properties": {
+                                "task_id": {
+                                  "type": "string",
+                                  "description": "Task ID"
+                                },
+                                "audio_wav_url": {
+                                  "type": "string",
+                                  "description": "WAV format audio file URL"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "responses": {
+                    "200": {
+                      "description": "Callback received successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "webhooks": {},
+    "components": {
+      "schemas": {},
+      "responses": {
+        "Error": {
+          "description": "Server error.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "integer",
+                    "description": "Response status code\n\n- **200**: Success - Request has been processed successfully\n- **401**: Unauthorized - Authentication credentials are missing or invalid\n- **402**: Insufficient Credits - Account does not have enough credits to perform the operation\n- **404**: Not Found - The requested resource or endpoint does not exist\n- **408**: Timeout - No result has been returned for over 10 minutes.\n- **422**: Validation Error - The request parameters failed validation checks\n- **429**: Rate Limited - Request limit has been exceeded for this resource\n- **455**: Service Unavailable - System is currently undergoing maintenance\n- **500**: Server Error - An unexpected error occurred while processing the request\n- **501**: Generation Failed - Content generation task failed\n- **505**: Feature Disabled - The requested feature is currently disabled"
+                  },
+                  "msg": {
+                    "type": "string",
+                    "description": "Response message, error description when failed"
+                  },
+                  "data": {
+                    "type": "object",
+                    "properties": {}
+                  }
+                },
+                "required": [
+                  "code",
+                  "msg",
+                  "data"
+                ]
+              },
+              "examples": {
+                "Example 1": {
+                  "summary": "Example 1",
+                  "value": {
+                    "code": 500,
+                    "msg": "Server Error - An unexpected error occurred while processing the request"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "securitySchemes": {
+        "BearerAuth": {
+          "type": "http",
+          "scheme": "bearer",
+          "bearerFormat": "API Key",
+          "description": "All API requests require a Bearer Token. Add the header `Authorization: Bearer YOUR_API_KEY` to authenticate requests."
+        }
+      }
+    },
+    "servers": [
+      {
+        "url": "https://api.kie.ai",
+        "description": "正式环境"
+      }
+    ],
+    "security": [
+      {
+        "BearerAuth": []
+      }
+    ]
+  }
+}
