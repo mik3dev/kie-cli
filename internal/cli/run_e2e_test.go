@@ -323,7 +323,7 @@ func TestRunUnknownModel(t *testing.T) {
 
 func TestRunPresetAndSyncModelsAreUsageErrors(t *testing.T) {
 	f := newFake(t)
-	if r := f.run(t, "run", "@mypreset"); r.code != 2 || !strings.Contains(r.out, "stage 5") {
+	if r := f.run(t, "run", "@mypreset"); r.code != 2 || !strings.Contains(r.out, "unknown preset") {
 		t.Fatalf("preset: code=%d out=%s", r.code, r.out)
 	}
 	// gemini-3-pro is a Chat model: hidden from list but found by Find; non-job.

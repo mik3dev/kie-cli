@@ -74,10 +74,10 @@ func runSync(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths, c
 	if len(data) == 0 {
 		data = json.RawMessage("null")
 	}
-	return output.Success(deps.Stdout, map[string]any{
+	return output.Success(deps.Stdout, withPreset(map[string]any{
 		"model": model, "state": "success", "sync": true, "result": data,
 		"files": files, "ids": ids, "uploaded": nonNil(uploaded),
-	})
+	}, prep.preset))
 }
 
 // syncFileID names downloaded files after the id the response created.
