@@ -1,6 +1,6 @@
 # kie-cli
 
-A CLI built for AI agents to generate images, video and audio through the [kie.ai](https://kie.ai) API. 200+ models come from the live catalog. Every command prints exactly one JSON object on stdout; progress and warnings go to stderr. It ships an agent skill (`kie-generate`) that teaches agents how to drive it.
+A CLI built for AI agents to generate images, video and audio through the [kie.ai](https://kie.ai) API. 180+ models come from the live catalog. Every command prints exactly one JSON object on stdout; progress and warnings go to stderr. It ships an agent skill (`kie-generate`) that teaches agents how to drive it.
 
 ## Install
 
@@ -59,7 +59,7 @@ kie-cli run google/imagen4-fast -p prompt="a red fox" --out ./media
 {"taskId":"...","model":"google/imagen4-fast","state":"success","files":[{"path":"media/....png","url":"https://...","kind":"image"}]}
 ```
 
-Use the local files in `files[].path`. Other useful flags: `--no-wait` (then `kie-cli task wait <taskId>`), `--no-download`, `--timeout`, `--input file.json`. The run command's built-in help lists them all.
+Array params take a repeated `-p` (`-p image_urls=a.png -p image_urls=b.png`); a comma list is never split and is treated as one value. Use the local files in `files[].path`. Other useful flags: `--no-wait` (then `kie-cli task wait <taskId>`), `--no-download`, `--timeout`, `--input file.json`. The run command's built-in help lists them all.
 
 ## Presets
 
