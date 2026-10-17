@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 	"time"
@@ -53,6 +55,8 @@ func newRunCmd(deps Deps) *cobra.Command {
 	f.String("input", "", "JSON object file with the input ('-' for stdin); -p overrides it")
 	addFinishFlags(cmd)
 	f.Bool("no-wait", false, "submit and return the taskId without waiting")
+	f.Bool("dry-run", false, "validate and print the request body without uploading or submitting")
+	f.Bool("no-validate", false, "send even if the input does not match the schema (problems become warnings)")
 	return cmd
 }
 
@@ -92,17 +96,14 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 	if doc.Null() {
 		_, _ = fmt.Fprintln(warn, "warning: "+nullSchemaWarning)
 	}
-	input, err := buildInput(cmd, deps)
+	prep, err := prepareInput(cmd, deps, doc, model, warn)
 	if err != nil {
 		return err
 	}
-	sch, err := doc.InputSchema()
-	if err != nil {
-		_, _ = fmt.Fprintf(warn, "warning: cannot read the input schema (%v); values are typed by guess\n", err)
-		sch = nil
+	if dry, _ := flags.GetBool("dry-run"); dry {
+		return emitDryRun(cmd, deps, c, paths, model, prep, warn)
 	}
-	input = schema.Coerce(sch, input)
-	input, uploaded, err := upload.ResolveLocal(cmd.Context(), input, nil, func(ctx context.Context, p string) (string, error) {
+	input, uploaded, err := upload.ResolveLocal(cmd.Context(), prep.input, prep.isFile, func(ctx context.Context, p string) (string, error) {
 		return upload.File(ctx, c, p)
 	})
 	if err != nil {
@@ -130,6 +131,111 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 	return finishTask(cmd, deps, c, paths, finishArgs{
 		id: id, model: model, outDir: outDir, timeout: timeout, createdAt: now, uploaded: uploaded,
 	})
+}
+
+const (
+	pendingUploadHost = "https://pending-upload.invalid/"
+	maxGotRunes       = 100
+)
+
+type pendingUpload struct {
+	Path        string `json:"path"`
+	Placeholder string `json:"placeholder"`
+}
+
+// preparedInput is the coerced input plus what validation and --dry-run need.
+type preparedInput struct {
+	input    map[string]any // coerced, local paths untouched
+	checked  map[string]any // coerced, local paths replaced by placeholders
+	isFile   func(string) bool
+	pending  []pendingUpload
+	problems []schema.Problem // only set under --no-validate
+}
+
+// prepareInput builds, coerces and validates the input without any network access.
+// Invalid input is a validation error unless --no-validate is set.
+func prepareInput(cmd *cobra.Command, deps Deps, doc schema.Doc, model string, warn io.Writer) (preparedInput, error) {
+	var p preparedInput
+	raw, err := buildInput(cmd, deps)
+	if err != nil {
+		return p, err
+	}
+	sch, err := doc.InputSchema()
+	if err != nil {
+		_, _ = fmt.Fprintf(warn, "warning: cannot read the input schema (%v); values are typed by guess\n", err)
+		sch = nil
+	}
+	p.input = schema.Coerce(sch, raw)
+	p.isFile = func(k string) bool { return upload.FileKey(k) || schema.HasURIFormat(sch, k) }
+	p.checked, _, err = upload.ResolveLocal(cmd.Context(), p.input, p.isFile, func(_ context.Context, path string) (string, error) {
+		ph := pendingUploadHost + url.PathEscape(filepath.Base(path))
+		p.pending = append(p.pending, pendingUpload{Path: path, Placeholder: ph})
+		return ph, nil
+	})
+	if err != nil {
+		return p, err
+	}
+	if sch == nil {
+		return p, nil
+	}
+	problems, err := schema.Validate(sch, p.checked)
+	if err != nil {
+		_, _ = fmt.Fprintf(warn, "warning: cannot validate the input (%v); sending without validation\n", err)
+		return p, nil
+	}
+	problems = capGot(problems)
+	if len(problems) == 0 {
+		return p, nil
+	}
+	if noValidate, _ := cmd.Flags().GetBool("no-validate"); !noValidate {
+		return p, &output.Error{
+			Code: output.CodeValidation,
+			Message: fmt.Sprintf("input does not match the schema of %s (%d problems); fix the fields, or use --no-validate if the schema is wrong",
+				model, len(problems)),
+			Details: map[string]any{"problems": problems},
+		}
+	}
+	for _, pr := range problems {
+		_, _ = fmt.Fprintf(warn, "warning: validation: %s: %s\n", pr.Field, pr.Message)
+	}
+	p.problems = problems
+	return p, nil
+}
+
+// capGot returns a copy of problems with string "got" values cut to maxGotRunes runes.
+func capGot(problems []schema.Problem) []schema.Problem {
+	out := make([]schema.Problem, len(problems))
+	for i, pr := range problems {
+		if s, ok := pr.Got.(string); ok {
+			if r := []rune(s); len(r) > maxGotRunes {
+				pr.Got = string(r[:maxGotRunes])
+			}
+		}
+		out[i] = pr
+	}
+	return out
+}
+
+// emitDryRun prints the request that would be sent; nothing is uploaded or submitted.
+func emitDryRun(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths, model string, p preparedInput, warn io.Writer) error {
+	out := map[string]any{
+		"dryRun": true, "model": model,
+		"body":           map[string]any{"model": model, "input": p.checked},
+		"pendingUploads": p.pending,
+	}
+	if p.pending == nil {
+		out["pendingUploads"] = []pendingUpload{}
+	}
+	svc := &catalog.Service{API: c, CacheDir: paths.Cache, Now: deps.Now}
+	if desc, err := svc.Price(cmd.Context(), model); err != nil {
+		_, _ = fmt.Fprintf(warn, "warning: could not get the price (%v)\n", err)
+	} else {
+		out["pricing"] = desc
+	}
+	if len(p.problems) > 0 {
+		out["problems"] = p.problems
+	}
+	return output.Success(deps.Stdout, out)
 }
 
 // findModel checks the catalog; a network failure only warns, other errors abort.

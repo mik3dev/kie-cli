@@ -68,6 +68,14 @@ func (f *fakeKie) serve(w http.ResponseWriter, r *http.Request) {
 	case strings.HasSuffix(p, "/schema"):
 		model := strings.TrimSuffix(strings.TrimPrefix(p, "/api/v1/models/"), "/schema")
 		reply(envelope(readLive2(r, "schemas/"+strings.ReplaceAll(model, "/", "__")+".json")))
+	case strings.HasSuffix(p, "/price"):
+		model := strings.TrimSuffix(strings.TrimPrefix(p, "/api/v1/models/"), "/price")
+		raw := readLive2(r, "price/"+strings.ReplaceAll(model, "/", "__")+".json")
+		if string(raw) == "null" {
+			reply(`{"code":404,"msg":"no price"}`)
+			return
+		}
+		reply(envelope(raw))
 	case p == "/api/file-stream-upload":
 		f.uploadHits.Add(1)
 		reply(envelope(map[string]string{"downloadUrl": "https://files.example/uploaded.png"}))
@@ -181,7 +189,7 @@ func errField(t *testing.T, m map[string]any, key string) any {
 func TestRunE2EImage(t *testing.T) {
 	f := newFake(t)
 	outDir := t.TempDir()
-	r := f.run(t, "run", imageModel, "-p", "prompt=a cat", "-p", "num_images=2", "--out", outDir)
+	r := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=a cat", "-p", "seed=7", "--out", outDir)
 	if r.code != 0 || r.m["ok"] != true || r.m["taskId"] != "task-1" || r.m["state"] != "success" {
 		t.Fatalf("code=%d out=%s stderr=%s", r.code, r.out, r.stderr)
 	}
@@ -198,7 +206,7 @@ func TestRunE2EImage(t *testing.T) {
 	}
 	body, _ := f.createBody.Load().(map[string]any)
 	in, _ := body["input"].(map[string]any)
-	if body["model"] != imageModel || in["prompt"] != "a cat" || in["num_images"] != 2.0 {
+	if body["model"] != imageModel || in["prompt"] != "a cat" || in["seed"] != "7" {
 		t.Errorf("createTask body = %v", body)
 	}
 	if r.m["creditsConsumed"] != 2.0 || r.m["costTime"] != 5.0 || r.m["result"] == nil {
@@ -214,7 +222,7 @@ func TestRunE2EImage(t *testing.T) {
 
 func TestRunQuietSilencesStderr(t *testing.T) {
 	f := newFake(t)
-	r := f.run(t, "run", imageModel, "-p", "prompt=x", "--out", t.TempDir(), "--quiet")
+	r := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x", "--out", t.TempDir(), "--quiet")
 	if r.code != 0 || r.stderr != "" {
 		t.Fatalf("code=%d stderr=%q", r.code, r.stderr)
 	}
@@ -226,14 +234,14 @@ func TestRunE2EUploadsLocalImage(t *testing.T) {
 	if err := os.WriteFile(img, pngBytes, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	r := f.run(t, "run", imageModel, "-p", "image_urls="+img, "--out", t.TempDir())
+	r := f.run(t, "run", klingI2V, "-p", "prompt=x", "-p", "image_urls="+img, "--out", t.TempDir())
 	if r.code != 0 || f.uploadHits.Load() != 1 {
 		t.Fatalf("code=%d uploads=%d out=%s", r.code, f.uploadHits.Load(), r.out)
 	}
 	body, _ := f.createBody.Load().(map[string]any)
 	in, _ := body["input"].(map[string]any)
-	urls, _ := in["image_urls"].(string)
-	if urls != "https://files.example/uploaded.png" {
+	urls, _ := in["image_urls"].([]any)
+	if len(urls) != 1 || urls[0] != "https://files.example/uploaded.png" {
 		t.Errorf("input = %v", in)
 	}
 	if up, _ := r.m["uploaded"].([]any); len(up) != 1 || up[0] != img {
@@ -243,7 +251,7 @@ func TestRunE2EUploadsLocalImage(t *testing.T) {
 
 func TestRunNoWait(t *testing.T) {
 	f := newFake(t)
-	r := f.run(t, "run", imageModel, "-p", "prompt=x", "--no-wait")
+	r := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x", "--no-wait")
 	if r.code != 0 || r.m["state"] != "submitted" || r.m["taskId"] != "task-1" || r.m["model"] != imageModel {
 		t.Fatalf("code=%d out=%s", r.code, r.out)
 	}
@@ -283,7 +291,7 @@ func TestRunPresetAndSyncModelsAreUsageErrors(t *testing.T) {
 func TestRunCredits402(t *testing.T) {
 	f := newFake(t)
 	f.createReply = func() string { return `{"code":402,"msg":"insufficient credits"}` }
-	r := f.run(t, "run", imageModel, "-p", "prompt=x")
+	r := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x")
 	if r.code != 4 || errField(t, r.m, "code") != "credits" {
 		t.Fatalf("code=%d out=%s", r.code, r.out)
 	}
@@ -295,7 +303,7 @@ func TestRunCredits402(t *testing.T) {
 func TestTaskWaitResumes(t *testing.T) {
 	f := newFake(t)
 	outDir := t.TempDir()
-	sub := f.run(t, "run", imageModel, "-p", "prompt=x", "--no-wait", "--out", outDir)
+	sub := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x", "--no-wait", "--out", outDir)
 	if sub.code != 0 {
 		t.Fatalf("submit: %s", sub.out)
 	}
@@ -328,7 +336,7 @@ func TestWaitTimeoutKeepsSubmittedAndReportsTaskID(t *testing.T) {
 	slow := func(d *cli.Deps) {
 		d.Sleep = func(_ context.Context, _ time.Duration) error { time.Sleep(5 * time.Millisecond); return nil }
 	}
-	r := f.runWith(t, slow, "run", imageModel, "-p", "prompt=x", "--timeout", "50ms")
+	r := f.runWith(t, slow, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x", "--timeout", "50ms")
 	if r.code != 6 || errField(t, r.m, "code") != "timeout" || errField(t, r.m, "taskId") != "task-1" {
 		t.Fatalf("code=%d out=%s", r.code, r.out)
 	}
@@ -342,7 +350,7 @@ func TestWaitTaskFailedRecordsFailAndTaskID(t *testing.T) {
 	f.recordReply = func(int32) string {
 		return envelope(map[string]any{"taskId": "task-1", "model": imageModel, "state": "fail", "failCode": "500", "failMsg": "boom"})
 	}
-	r := f.run(t, "run", imageModel, "-p", "prompt=x")
+	r := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x")
 	if r.code != 5 || errField(t, r.m, "taskId") != "task-1" || errField(t, r.m, "failMsg") != "boom" {
 		t.Fatalf("code=%d out=%s", r.code, r.out)
 	}
@@ -354,7 +362,7 @@ func TestWaitTaskFailedRecordsFailAndTaskID(t *testing.T) {
 func TestWaitPlainAPIErrorStillCarriesTaskID(t *testing.T) {
 	f := newFake(t)
 	f.recordReply = func(int32) string { return `{"code":422,"msg":"bad record"}` }
-	r := f.run(t, "run", imageModel, "-p", "prompt=x")
+	r := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x")
 	if r.code != 1 || errField(t, r.m, "code") != "api" || errField(t, r.m, "taskId") != "task-1" {
 		t.Fatalf("code=%d out=%s", r.code, r.out)
 	}
@@ -369,7 +377,7 @@ func TestWaitPlainAPIErrorStillCarriesTaskID(t *testing.T) {
 func TestDownloadFailureReturnsIOWithTaskIDAndURLs(t *testing.T) {
 	f := newFake(t)
 	f.cdnStatus = 404
-	r := f.run(t, "run", imageModel, "-p", "prompt=x", "--out", t.TempDir())
+	r := f.run(t, "run", imageModel, "-p", "aspect_ratio=1:1", "-p", "prompt=x", "--out", t.TempDir())
 	if r.code != 1 || errField(t, r.m, "code") != "io" || errField(t, r.m, "taskId") != "task-1" {
 		t.Fatalf("code=%d out=%s", r.code, r.out)
 	}
@@ -385,7 +393,7 @@ func TestDownloadFailureReturnsIOWithTaskIDAndURLs(t *testing.T) {
 func TestRunInputFileOverriddenByParams(t *testing.T) {
 	f := newFake(t)
 	in := filepath.Join(t.TempDir(), "in.json")
-	if err := os.WriteFile(in, []byte(`{"prompt":"from file","seed":7}`), 0o600); err != nil {
+	if err := os.WriteFile(in, []byte(`{"prompt":"from file","seed":7,"aspect_ratio":"1:1"}`), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	r := f.run(t, "run", imageModel, "--input", in, "-p", "prompt=override", "--no-wait")
@@ -414,7 +422,7 @@ func TestRunBadInputIsUsageError(t *testing.T) {
 
 func TestRunInputFromStdin(t *testing.T) {
 	f := newFake(t)
-	r := f.runWith(t, func(d *cli.Deps) { d.Stdin = strings.NewReader(`{"prompt":"stdin"}`) },
+	r := f.runWith(t, func(d *cli.Deps) { d.Stdin = strings.NewReader(`{"prompt":"stdin","aspect_ratio":"1:1"}`) },
 		"run", imageModel, "--input", "-", "--no-wait")
 	body, _ := f.createBody.Load().(map[string]any)
 	if got, _ := body["input"].(map[string]any); r.code != 0 || got["prompt"] != "stdin" {
