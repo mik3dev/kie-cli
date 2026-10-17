@@ -10,6 +10,7 @@ import (
 	"github.com/mik3dev/kie-cli/internal/config"
 	"github.com/mik3dev/kie-cli/internal/ledger"
 	"github.com/mik3dev/kie-cli/internal/output"
+	"github.com/mik3dev/kie-cli/internal/result"
 	"github.com/mik3dev/kie-cli/internal/task"
 	"github.com/spf13/cobra"
 )
@@ -66,6 +67,7 @@ func newTaskGetCmd(deps Deps) *cobra.Command {
 				"model":           rec.Model,
 				"state":           rec.State,
 				"result":          rec.Response,
+				"ids":             result.Extract(rec.TaskID, rec.Response),
 				"creditsConsumed": rec.CreditsConsumed,
 				"costTime":        rec.CostTime,
 				"failCode":        rec.FailCode,
