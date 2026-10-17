@@ -124,6 +124,13 @@ make snapshot   # local goreleaser build, no publish
 make tidy-check # go mod tidy -diff (must print nothing)
 ```
 
-Tests never call the real API. Live smoke tests will be run by hand only (`KIE_E2E=1`, build tag `live`) and never in CI.
+Tests never call the real API. Live smoke tests run by hand only (build tag `live`, `KIE_E2E=1`) and never in CI. Load the key from a gitignored `.env` without printing it:
+
+```sh
+# free checks only (GET endpoints and --dry-run, 0 credits)
+set -a; . ./.env; set +a; KIE_E2E=1 go test -tags live -run Live ./internal/cli/ -v
+# also the paid tests; KIE_E2E_BUDGET caps credits spent in one run (default 30)
+set -a; . ./.env; set +a; KIE_E2E=1 KIE_E2E_PAID=1 KIE_E2E_BUDGET=30 go test -tags live -run Live ./internal/cli/ -v
+```
 
 Releasing: push a tag `vX.Y.Z`. The release workflow runs goreleaser and publishes the archives and `checksums.txt` to GitHub Releases.
