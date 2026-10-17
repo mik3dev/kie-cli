@@ -150,6 +150,8 @@ skills/kie-generate/...
 presets/default.yaml
 ```
 
+Módulo Go: `github.com/mik3dev/kie-cli` (repo privado `https://github.com/mik3dev/kie-cli.git`).
+
 Dependencias sugeridas: `spf13/cobra` (subcomandos), `gopkg.in/yaml.v3` y un validador JSON Schema con `oneOf` (p. ej. `santhosh-tekuri/jsonschema`). Todo lo demás con stdlib. Repo **privado** por ahora: la instalación es `make install` / `go install` (con `GOPRIVATE`) o descargar el binario de GitHub Releases privado vía `gh release download`. `goreleaser` arma los binarios multiplataforma. Homebrew tap queda para cuando el repo se haga público.
 
 ## 8. Etapas y estimaciones (aprobado)
@@ -161,7 +163,7 @@ Cada etapa tiene su propio plan de implementación (TDD, cobertura ≥80%). Las 
 | # | Etapa | Contenido | Estim. |
 |---|---|---|---|
 | 0 | Fase 00 | investigación, diseño (este doc) | hecho |
-| 1 | Núcleo | auth/config, cliente API + errores, `models list/search/schema/price/health` + caché + limitador, `credits`, upload, `run` (createTask + polling + descarga), `task get/wait`, contrato JSON y códigos de salida. Todo contra mocks construidos con los ejemplos de la documentación. | 3–4 |
+| 1 | Núcleo | **Paso 0 (decisión del dueño): captura real sin costo.** Con la key, se ejecuta una vez un script que solo lee: `models` (catálogo completo), `schema` de todos los modelos (respetando 1 req/s, ≈4 min), varios `price`/`success-rate` y `chat/credit`. Las respuestas se guardan en `testdata/live/` como fixtures de los mocks, sin la key ni headers. Se revisa que Suno, Veo y Runway estén en el catálogo y cuántos schemas vienen `null`; si algo contradice el diseño, se consulta con el dueño. Luego: auth/config, cliente API + errores, `models list/search/schema/price/health` + caché + limitador, `credits`, upload, `run` (createTask + polling + descarga), `task get/wait`, contrato JSON y códigos de salida. Todo contra mocks construidos con los ejemplos de la documentación. | 3–4 |
 | 2 | Validación | resolución `$ref`, coerción por tipo, validación JSON Schema con `oneOf`, mensajes de error útiles, `--dry-run` con precio | 2 |
 | 3 | Encadenar | exponer `ids` en la salida (taskId, audio ids de Suno, lastFrameUrl); `task get` con los mismos ids; pruebas de flujos encadenados (extend, upscale, Suno extend) | 0.5–1 |
 | 4 | Audio y casos raros | extractor de Suno (`data[]`), modelos síncronos, `suno-recovery-audio` (polling propio), resultados de texto (`resultObject`) | 1–2 |
