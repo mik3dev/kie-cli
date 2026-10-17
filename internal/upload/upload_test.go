@@ -39,7 +39,7 @@ func TestResolveLocalUploadsFileKeys(t *testing.T) {
 	inDir(t, "a.png")
 	var calls []string
 	got, uploaded, err := upload.ResolveLocal(context.Background(),
-		map[string]any{"image_urls": []any{"./a.png", "https://x/b.png"}}, fakeUp(&calls))
+		map[string]any{"image_urls": []any{"./a.png", "https://x/b.png"}}, nil, fakeUp(&calls))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestPromptMatchingFileIsNotUploaded(t *testing.T) {
 	inDir(t, "a.png")
 	var calls []string
 	in := map[string]any{"prompt": "a.png"}
-	got, uploaded, err := upload.ResolveLocal(context.Background(), in, fakeUp(&calls))
+	got, uploaded, err := upload.ResolveLocal(context.Background(), in, nil, fakeUp(&calls))
 	if err != nil || len(calls) != 0 || len(uploaded) != 0 || !reflect.DeepEqual(got, in) {
 		t.Fatalf("got=%v calls=%v err=%v", got, calls, err)
 	}
@@ -66,7 +66,7 @@ func TestNestedObjectsUnderFileKey(t *testing.T) {
 	inDir(t, "v.mp4")
 	var calls []string
 	got, _, err := upload.ResolveLocal(context.Background(),
-		map[string]any{"video_list": []any{map[string]any{"url": "./v.mp4", "n": 1}}}, fakeUp(&calls))
+		map[string]any{"video_list": []any{map[string]any{"url": "./v.mp4", "n": 1}}}, nil, fakeUp(&calls))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -80,14 +80,14 @@ func TestMissingPathIsValidationError(t *testing.T) {
 	inDir(t)
 	var calls []string
 	for _, p := range []string{"./nope.png", "nope.jpg", "/no/such/file"} {
-		_, _, err := upload.ResolveLocal(context.Background(), map[string]any{"image_url": p}, fakeUp(&calls))
+		_, _, err := upload.ResolveLocal(context.Background(), map[string]any{"image_url": p}, nil, fakeUp(&calls))
 		var oe *output.Error
 		if !errors.As(err, &oe) || oe.Code != "validation" || oe.Message != "file not found: "+p {
 			t.Fatalf("%s: err = %v", p, err)
 		}
 	}
 	// plain non-path text under a file key is left alone
-	if _, _, err := upload.ResolveLocal(context.Background(), map[string]any{"file_note": "hello"}, fakeUp(&calls)); err != nil {
+	if _, _, err := upload.ResolveLocal(context.Background(), map[string]any{"file_note": "hello"}, nil, fakeUp(&calls)); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -97,7 +97,7 @@ func TestResolveLocalDoesNotMutateInput(t *testing.T) {
 	var calls []string
 	list := []any{"./a.png"}
 	in := map[string]any{"image_urls": list, "prompt": "p"}
-	_, _, err := upload.ResolveLocal(context.Background(), in, fakeUp(&calls))
+	_, _, err := upload.ResolveLocal(context.Background(), in, nil, fakeUp(&calls))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -110,7 +110,7 @@ func TestSchemesAreSkipped(t *testing.T) {
 	inDir(t)
 	var calls []string
 	in := map[string]any{"image_urls": []any{"oss://b/k.png", "asset://abc.png", "http://x/y.png"}}
-	got, _, err := upload.ResolveLocal(context.Background(), in, fakeUp(&calls))
+	got, _, err := upload.ResolveLocal(context.Background(), in, nil, fakeUp(&calls))
 	if err != nil || !reflect.DeepEqual(got, in) || len(calls) != 0 {
 		t.Fatalf("got=%v err=%v", got, err)
 	}
@@ -123,7 +123,7 @@ func TestTildeExpands(t *testing.T) {
 		t.Fatal(err)
 	}
 	var calls []string
-	_, _, err := upload.ResolveLocal(context.Background(), map[string]any{"image_url": "~/h.png"}, fakeUp(&calls))
+	_, _, err := upload.ResolveLocal(context.Background(), map[string]any{"image_url": "~/h.png"}, nil, fakeUp(&calls))
 	if err != nil || len(calls) != 1 || calls[0] != filepath.Join(home, "h.png") {
 		t.Fatalf("calls=%v err=%v", calls, err)
 	}
@@ -201,5 +201,23 @@ func TestUploadTooLarge(t *testing.T) {
 	var oe *output.Error
 	if !errors.As(err, &oe) || oe.Code != "validation" || hits.Load() != 0 {
 		t.Fatalf("err=%v hits=%d", err, hits.Load())
+	}
+}
+
+func TestResolveLocalCustomPredicate(t *testing.T) {
+	inDir(t, "a.png", "b.png")
+	var calls []string
+	in := map[string]any{"ref": "./a.png", "image_url": "./b.png"}
+	got, uploaded, err := upload.ResolveLocal(context.Background(), in,
+		func(k string) bool { return k == "ref" }, fakeUp(&calls))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]any{"ref": "https://up/a.png", "image_url": "./b.png"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %#v", got)
+	}
+	if !reflect.DeepEqual(uploaded, []string{"./a.png"}) {
+		t.Fatalf("uploaded = %v", uploaded)
 	}
 }

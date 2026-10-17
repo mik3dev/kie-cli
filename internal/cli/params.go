@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,8 +8,21 @@ import (
 )
 
 // ParseParams turns key=value pairs into an input map.
-// ponytail: literal-based typing; stage 2 coerces by schema type.
+// Values stay strings (a repeated key gives []any of strings); schema.Coerce
+// types them against the model schema.
 func ParseParams(pairs []string, readFile func(string) ([]byte, error)) (map[string]any, error) {
+	tagged, err := parseTagged(pairs, readFile)
+	if err != nil {
+		return nil, err
+	}
+	return unwrapFileValues(tagged), nil
+}
+
+// fileText is the content of a -p key=@file value; it is never type-guessed.
+type fileText string
+
+// parseTagged is ParseParams keeping @file contents wrapped as fileText.
+func parseTagged(pairs []string, readFile func(string) ([]byte, error)) (map[string]any, error) {
 	out := make(map[string]any, len(pairs))
 	lists := map[string]bool{} // keys whose value is an array built from repeats
 	for _, p := range pairs {
@@ -36,6 +48,28 @@ func ParseParams(pairs []string, readFile func(string) ([]byte, error)) (map[str
 	return out, nil
 }
 
+func unwrapFileValues(in map[string]any) map[string]any {
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		switch t := v.(type) {
+		case fileText:
+			out[k] = string(t)
+		case []any:
+			items := make([]any, len(t))
+			for i, it := range t {
+				if ft, ok := it.(fileText); ok {
+					it = string(ft)
+				}
+				items[i] = it
+			}
+			out[k] = items
+		default:
+			out[k] = v
+		}
+	}
+	return out
+}
+
 func parseValue(raw string, readFile func(string) ([]byte, error)) (any, error) {
 	if rest, ok := strings.CutPrefix(raw, "@@"); ok {
 		return "@" + rest, nil
@@ -45,21 +79,7 @@ func parseValue(raw string, readFile func(string) ([]byte, error)) (any, error) 
 		if err != nil {
 			return nil, &output.Error{Code: output.CodeUsage, Message: fmt.Sprintf("cannot read %s: %v", path, err)}
 		}
-		return string(b), nil
-	}
-	if strings.HasPrefix(raw, "{") || strings.HasPrefix(raw, "[") {
-		var v any
-		if json.Unmarshal([]byte(raw), &v) == nil {
-			return v, nil
-		}
-		return raw, nil
-	}
-	var v any
-	if raw == strings.TrimSpace(raw) && json.Unmarshal([]byte(raw), &v) == nil {
-		switch v.(type) {
-		case bool, float64:
-			return v, nil
-		}
+		return fileText(b), nil
 	}
 	return raw, nil
 }

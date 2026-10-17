@@ -22,11 +22,11 @@ func TestParseParams(t *testing.T) {
 		pairs []string
 		want  map[string]any
 	}{
-		{"number", []string{"duration=5"}, map[string]any{"duration": 5.0}},
-		{"bool", []string{"sound=true"}, map[string]any{"sound": true}},
+		{"number stays text", []string{"duration=5"}, map[string]any{"duration": "5"}},
+		{"bool stays text", []string{"sound=true"}, map[string]any{"sound": "true"}},
 		{"string", []string{"prompt=hola mundo"}, map[string]any{"prompt": "hola mundo"}},
-		{"object", []string{`x={"a":1}`}, map[string]any{"x": map[string]any{"a": 1.0}}},
-		{"array value", []string{`x=[1,2]`}, map[string]any{"x": []any{1.0, 2.0}}},
+		{"object stays text", []string{`x={"a":1}`}, map[string]any{"x": "{\"a\":1}"}},
+		{"array stays text", []string{`x=[1,2]`}, map[string]any{"x": "[1,2]"}},
 		{"bad json stays string", []string{`x={nope`}, map[string]any{"x": "{nope"}},
 		{"repeat", []string{"image_urls=a", "image_urls=b"}, map[string]any{"image_urls": []any{"a", "b"}}},
 		{"repeat x3", []string{"k=a", "k=b", "k=c"}, map[string]any{"k": []any{"a", "b", "c"}}},

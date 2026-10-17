@@ -121,12 +121,16 @@ func openMultipart(path, uploadPath, name string) (string, io.ReadCloser, error)
 }
 
 // ResolveLocal returns a new input map with local file references replaced by uploaded URLs,
-// plus the local paths that were uploaded.
-func ResolveLocal(ctx context.Context, input map[string]any, up func(context.Context, string) (string, error)) (map[string]any, []string, error) {
+// plus the local paths that were uploaded. Only keys for which isFileKey is true
+// are scanned; a nil isFileKey falls back to FileKey.
+func ResolveLocal(ctx context.Context, input map[string]any, isFileKey func(string) bool, up func(context.Context, string) (string, error)) (map[string]any, []string, error) {
+	if isFileKey == nil {
+		isFileKey = FileKey
+	}
 	r := &resolver{ctx: ctx, up: up, done: map[string]string{}}
 	out := make(map[string]any, len(input))
 	for k, v := range input {
-		if !FileKey(k) {
+		if !isFileKey(k) {
 			out[k] = v
 			continue
 		}
