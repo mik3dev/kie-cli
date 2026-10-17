@@ -3,6 +3,8 @@ package api_test
 import (
 	"bytes"
 	"context"
+	"io"
+	"mime/multipart"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -241,5 +243,46 @@ func TestContextCancelStopsRetry(t *testing.T) {
 	err := c.Do(ctx, api.Request{Method: "GET", Path: "/x"}, nil)
 	if err == nil || hits.Load() != 1 {
 		t.Fatalf("err=%v hits=%d", err, hits.Load())
+	}
+}
+
+func TestBodyFactoryMultipartRetriesAndDecodes(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer k-secret" {
+			t.Errorf("auth = %q", r.Header.Get("Authorization"))
+		}
+		if !strings.HasPrefix(r.Header.Get("Content-Type"), "multipart/form-data") {
+			t.Errorf("content-type = %q", r.Header.Get("Content-Type"))
+		}
+		if err := r.ParseMultipartForm(1 << 20); err != nil || r.FormValue("a") != "b" {
+			t.Errorf("form err=%v a=%q", err, r.FormValue("a"))
+		}
+		if hits.Add(1) == 1 {
+			w.Write([]byte(`{"code":429,"msg":"slow"}`))
+			return
+		}
+		w.Write([]byte(`{"success":true,"code":200,"msg":"ok","data":{"downloadUrl":"https://x/f"}}`))
+	}))
+	defer srv.Close()
+	c, _ := newClient(t, srv.URL)
+	var opened atomic.Int32
+	factory := func() (string, io.ReadCloser, error) {
+		opened.Add(1)
+		var buf bytes.Buffer
+		mw := multipart.NewWriter(&buf)
+		_ = mw.WriteField("a", "b")
+		_ = mw.Close()
+		return mw.FormDataContentType(), io.NopCloser(&buf), nil
+	}
+	var out struct {
+		DownloadURL string `json:"downloadUrl"`
+	}
+	err := c.Do(context.Background(), api.Request{Method: "POST", Path: "/up", Host: api.HostUpload, BodyFactory: factory}, &out)
+	if err != nil || out.DownloadURL != "https://x/f" {
+		t.Fatalf("err=%v out=%+v", err, out)
+	}
+	if opened.Load() != 2 {
+		t.Fatalf("factory opened %d times, want 2", opened.Load())
 	}
 }

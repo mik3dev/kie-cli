@@ -38,8 +38,11 @@ type Request struct {
 	Path   string
 	Query  url.Values
 	Body   any
-	Host   Host
-	Class  Class
+	// BodyFactory, when set, replaces Body: it is called once per attempt to
+	// open a fresh (e.g. multipart) body, so retries can re-read the source.
+	BodyFactory func() (contentType string, body io.ReadCloser, err error)
+	Host        Host
+	Class       Class
 }
 
 // Client talks to kie.ai. Safe for concurrent use.
@@ -161,8 +164,18 @@ func (c *Client) once(ctx context.Context, r Request, payload []byte, out any) e
 		u += "?" + r.Query.Encode()
 	}
 	var body io.Reader
+	contentType := ""
 	if payload != nil {
 		body = bytes.NewReader(payload)
+		contentType = "application/json"
+	}
+	if r.BodyFactory != nil {
+		ct, rc, ferr := r.BodyFactory()
+		if ferr != nil {
+			return fmt.Errorf("open request body: %w", ferr)
+		}
+		defer rc.Close()
+		body, contentType = rc, ct
 	}
 	hreq, err := http.NewRequestWithContext(ctx, r.Method, u, body)
 	if err != nil {
@@ -170,8 +183,8 @@ func (c *Client) once(ctx context.Context, r Request, payload []byte, out any) e
 	}
 	hreq.Header.Set("Authorization", "Bearer "+c.Key)
 	hreq.Header.Set("Accept", "application/json")
-	if payload != nil {
-		hreq.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		hreq.Header.Set("Content-Type", contentType)
 	}
 	var wroteHeaders atomic.Bool
 	hreq = hreq.WithContext(httptrace.WithClientTrace(ctx, &httptrace.ClientTrace{
