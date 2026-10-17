@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -9,7 +8,8 @@ import (
 )
 
 // ParseParams turns key=value pairs into an input map.
-// ponytail: literal-based typing; stage 2 coerces by schema type.
+// Values stay strings (a repeated key gives []any of strings); schema.Coerce
+// types them against the model schema.
 func ParseParams(pairs []string, readFile func(string) ([]byte, error)) (map[string]any, error) {
 	out := make(map[string]any, len(pairs))
 	lists := map[string]bool{} // keys whose value is an array built from repeats
@@ -46,20 +46,6 @@ func parseValue(raw string, readFile func(string) ([]byte, error)) (any, error) 
 			return nil, &output.Error{Code: output.CodeUsage, Message: fmt.Sprintf("cannot read %s: %v", path, err)}
 		}
 		return string(b), nil
-	}
-	if strings.HasPrefix(raw, "{") || strings.HasPrefix(raw, "[") {
-		var v any
-		if json.Unmarshal([]byte(raw), &v) == nil {
-			return v, nil
-		}
-		return raw, nil
-	}
-	var v any
-	if raw == strings.TrimSpace(raw) && json.Unmarshal([]byte(raw), &v) == nil {
-		switch v.(type) {
-		case bool, float64:
-			return v, nil
-		}
 	}
 	return raw, nil
 }

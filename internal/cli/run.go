@@ -96,6 +96,12 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 	if err != nil {
 		return err
 	}
+	sch, err := doc.InputSchema()
+	if err != nil {
+		_, _ = fmt.Fprintf(warn, "warning: cannot read the input schema (%v); values are typed by guess\n", err)
+		sch = nil
+	}
+	input = schema.Coerce(sch, input)
 	input, uploaded, err := upload.ResolveLocal(cmd.Context(), input, func(ctx context.Context, p string) (string, error) {
 		return upload.File(ctx, c, p)
 	})

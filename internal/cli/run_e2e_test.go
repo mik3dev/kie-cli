@@ -391,7 +391,7 @@ func TestRunInputFileOverriddenByParams(t *testing.T) {
 	r := f.run(t, "run", imageModel, "--input", in, "-p", "prompt=override", "--no-wait")
 	body, _ := f.createBody.Load().(map[string]any)
 	got, _ := body["input"].(map[string]any)
-	if r.code != 0 || got["prompt"] != "override" || got["seed"] != 7.0 {
+	if r.code != 0 || got["prompt"] != "override" || got["seed"] != "7" { // imagen4 declares seed as string
 		t.Fatalf("code=%d input=%v", r.code, got)
 	}
 }
