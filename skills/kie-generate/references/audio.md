@@ -41,5 +41,5 @@ Some endpoints answer immediately instead of creating a task (for example Gemini
 
 - Link expired or download failed (`io`): the task is still known. `kie-cli task get <taskId>` shows the result; `kie-cli task wait <taskId> --out DIR` downloads again.
 - Timeout or a lost session: `kie-cli task list` to find the `taskId`, then `kie-cli task wait <taskId>`.
-- `submit_uncertain`: do not resubmit. Check `kie-cli task list` first.
+- `submit_uncertain`: do not resubmit. Tell the user the task may exist and ask them to check https://kie.ai/logs; resubmit only with their confirmation. `kie-cli task list` shows the attempt as `state: unknown` without a taskId.
 - Expired Suno audio links can be refreshed with the recovery model (`ai-music-api/suno-recovery-audio`, input `task_id`) when the schema lists it.

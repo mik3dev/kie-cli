@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
+	"syscall"
 	"testing"
 	"testing/fstest"
 
@@ -12,6 +13,8 @@ import (
 )
 
 func TestInstallCopiesTree(t *testing.T) {
+	old := syscall.Umask(0o022)
+	defer syscall.Umask(old)
 	src := fstest.MapFS{
 		"s/k/SKILL.md":        {Data: []byte("skill")},
 		"s/k/references/a.md": {Data: []byte("ref")},

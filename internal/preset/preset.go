@@ -12,6 +12,7 @@ import (
 	"os"
 	"regexp"
 	"sort"
+	"strings"
 
 	"gopkg.in/yaml.v3"
 )
@@ -41,7 +42,7 @@ type rawPreset struct {
 }
 
 type rawFile struct {
-	Presets []rawPreset `yaml:"presets"`
+	Presets []*rawPreset `yaml:"presets"`
 }
 
 // Parse decodes and validates a presets document, tagging each preset with source.
@@ -55,6 +56,9 @@ func Parse(data []byte, source string) ([]Preset, error) {
 	seen := map[string]bool{}
 	out := make([]Preset, 0, len(f.Presets))
 	for i, r := range f.Presets {
+		if r == nil {
+			return nil, fmt.Errorf("preset #%d: empty entry", i+1)
+		}
 		if !namePattern.MatchString(r.Name) {
 			return nil, fmt.Errorf("preset #%d: invalid name %q (want %s)", i+1, r.Name, namePattern)
 		}
@@ -62,7 +66,7 @@ func Parse(data []byte, source string) ([]Preset, error) {
 			return nil, fmt.Errorf("preset %q: duplicate name", r.Name)
 		}
 		seen[r.Name] = true
-		if r.Model == "" {
+		if strings.TrimSpace(r.Model) == "" {
 			return nil, fmt.Errorf("preset %q: model is required", r.Name)
 		}
 		params, err := normalize(r.Params)

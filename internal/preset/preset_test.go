@@ -25,11 +25,14 @@ func TestParseValid(t *testing.T) {
 
 func TestParseErrors(t *testing.T) {
 	cases := []struct{ name, doc, want string }{
-		{"invalid yaml", "presets: [", ""},
+		{"invalid yaml", "presets: [", "parse presets"},
 		{"unknown entry key", "presets:\n- name: a\n  model: m\n  modle: x\n", "modle"},
 		{"unknown top-level key", "presets:\n- name: a\n  model: m\npreset: []\n", "preset"},
-		{"missing model", "presets:\n- name: a\n", "model"},
-		{"bad name", "presets:\n- name: Foo Bar\n  model: m\n", "name"},
+		{"missing model", "presets:\n- name: a\n", "model is required"},
+		{"bad name", "presets:\n- name: Foo Bar\n  model: m\n", "invalid name"},
+		{"blank model", "presets:\n- name: a\n  model: \"  \"\n", "model is required"},
+		{"null entry", "presets:\n- null\n", "preset #1: empty entry"},
+		{"empty dash entry", "presets:\n- name: a\n  model: m\n-\n", "preset #2: empty entry"},
 		{"duplicate", "presets:\n- name: a\n  model: m\n- name: a\n  model: n\n", "duplicate"},
 	}
 	for _, c := range cases {
@@ -124,6 +127,14 @@ func TestFactoryPresetsMatchLiveSchemas(t *testing.T) {
 	for _, n := range want {
 		if _, ok := preset.Find(list, n); !ok {
 			t.Errorf("missing factory preset %s", n)
+		}
+	}
+	for _, n := range []string{"musica", "instrumental"} {
+		p, _ := preset.Find(list, n)
+		switch p.Params["model"] {
+		case "V6", "V6_MINI", "V6_WILD":
+		default:
+			t.Errorf("%s: params.model %v not in V6/V6_MINI/V6_WILD", n, p.Params["model"])
 		}
 	}
 	mb, err := os.ReadFile("../../testdata/live/models.json")

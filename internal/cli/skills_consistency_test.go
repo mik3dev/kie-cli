@@ -155,6 +155,13 @@ func TestSkillDocumentsExitCodes(t *testing.T) {
 	}
 }
 
+func TestSkillSubmitUncertainPointsToKieLogs(t *testing.T) {
+	text := skillDocs(t)["skills/kie-generate/SKILL.md"]
+	if !strings.Contains(text, "kie.ai/logs") {
+		t.Error("SKILL.md must tell users to check https://kie.ai/logs on submit_uncertain")
+	}
+}
+
 func TestSkillFrontmatter(t *testing.T) {
 	text := skillDocs(t)["skills/kie-generate/SKILL.md"]
 	if !strings.HasPrefix(text, "---\n") {

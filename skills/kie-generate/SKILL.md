@@ -74,7 +74,7 @@ On failure stdout is `{"ok":false,"error":{"code","message","details"?}}` and th
 | 5 | `task_failed` | the model failed the task (`details.taskId`). Change the prompt/inputs; do not blindly resubmit |
 | 6 | `timeout` | still running when the wait ended. `details.taskId` is kept: `kie-cli task wait <taskId>` with a larger `--timeout` |
 | 7 | `rate_limit` | too many requests. Wait a bit, then retry |
-| 8 | `submit_uncertain` | the submit may or may not have been created. Do NOT resubmit (double charge). Run `kie-cli task list` / `kie-cli task get <taskId>` to check, and only resubmit if nothing was created |
+| 8 | `submit_uncertain` | the submit may or may not have created a task. Do NOT resubmit (double charge). Tell the user the task may exist and ask them to check https://kie.ai/logs; resubmit only with their confirmation. `kie-cli task list` shows the attempt as `state: unknown` without a taskId |
 | 1 | `api` | other kie.ai/network error. Read `message`, retry once if transient |
 | 1 | `io` | local file problem (download, write, read). Check paths and disk; the result URLs may be in `details` |
 
