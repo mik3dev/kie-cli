@@ -123,6 +123,11 @@ func captureRecord(t *testing.T, taskID string) {
 func captureOnCleanup(t *testing.T, m map[string]any) {
 	t.Helper()
 	id, _ := m["taskId"].(string)
+	if id == "" { // failed runs carry the id in error.details.taskId
+		e, _ := m["error"].(map[string]any)
+		d, _ := e["details"].(map[string]any)
+		id, _ = d["taskId"].(string)
+	}
 	if id == "" {
 		return
 	}
