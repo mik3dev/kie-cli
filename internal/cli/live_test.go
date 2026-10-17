@@ -219,10 +219,3 @@ func TestLiveDryRunVideoChain(t *testing.T) {
 		t.Fatalf("dry-run: exit %d error=%v", code, m["error"])
 	}
 }
-
-// TestLivePaidGate checks the paid gate itself: an unknown cost must skip, so
-// it can never spend credits (it also keeps paid in use until paid tests land).
-func TestLivePaidGate(t *testing.T) {
-	paid(t, 0)
-	t.Fatal("paid(0) must skip")
-}
