@@ -41,7 +41,7 @@ func newSvc(t *testing.T, hits *atomic.Int32) *catalog.Service {
 			w.WriteHeader(404)
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]any{"code": 200, "msg": "ok", "data": data})
+		_ = json.NewEncoder(w).Encode(map[string]any{"code": 200, "msg": "ok", "data": data})
 	}))
 	t.Cleanup(srv.Close)
 	c := api.New("k", func(string) string { return "" })
@@ -68,9 +68,9 @@ func TestListUsesCacheWithinTTL(t *testing.T) {
 func TestListExpiredCacheRefetches(t *testing.T) {
 	var hits atomic.Int32
 	s := newSvc(t, &hits)
-	s.List(context.Background(), false)
+	_, _ = s.List(context.Background(), false)
 	s.Now = func() time.Time { return time.Now().Add(2 * time.Hour) }
-	s.List(context.Background(), false)
+	_, _ = s.List(context.Background(), false)
 	if hits.Load() != 2 {
 		t.Fatalf("hits = %d", hits.Load())
 	}
@@ -79,8 +79,8 @@ func TestListExpiredCacheRefetches(t *testing.T) {
 func TestListRefreshBypassesCache(t *testing.T) {
 	var hits atomic.Int32
 	s := newSvc(t, &hits)
-	s.List(context.Background(), false)
-	s.List(context.Background(), true)
+	_, _ = s.List(context.Background(), false)
+	_, _ = s.List(context.Background(), true)
 	if hits.Load() != 2 {
 		t.Fatalf("hits = %d", hits.Load())
 	}

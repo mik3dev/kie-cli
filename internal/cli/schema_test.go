@@ -17,10 +17,10 @@ func schemaServer(t *testing.T, hits *atomic.Int32) *httptest.Server {
 		model := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/api/v1/models/"), "/schema")
 		b, err := os.ReadFile("../../testdata/live/schemas/" + strings.ReplaceAll(model, "/", "__") + ".json")
 		if err != nil {
-			w.Write([]byte(`{"code":404,"msg":"nf"}`))
+			_, _ = w.Write([]byte(`{"code":404,"msg":"nf"}`))
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]any{"code": 200, "msg": "ok", "data": json.RawMessage(b)})
+		_ = json.NewEncoder(w).Encode(map[string]any{"code": 200, "msg": "ok", "data": json.RawMessage(b)})
 	}))
 	t.Cleanup(srv.Close)
 	return srv

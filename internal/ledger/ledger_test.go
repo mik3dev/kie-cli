@@ -89,7 +89,7 @@ func TestListSkipsCorruptLine(t *testing.T) {
 	if _, err := f.WriteString("{not json\n"); err != nil {
 		t.Fatal(err)
 	}
-	f.Close()
+	_ = f.Close()
 	mustAppend(t, p, ledger.Entry{TaskID: "ok2", Model: "m", State: "success"})
 
 	var warn bytes.Buffer

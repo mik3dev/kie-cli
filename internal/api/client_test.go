@@ -28,7 +28,7 @@ func newClient(t *testing.T, url string) (*api.Client, *[]time.Duration) {
 
 func TestDoDecodesData(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"code":200,"msg":"ok","data":{"taskId":"t1"}}`))
+		_, _ = w.Write([]byte(`{"code":200,"msg":"ok","data":{"taskId":"t1"}}`))
 	}))
 	defer srv.Close()
 	c, _ := newClient(t, srv.URL)
@@ -45,7 +45,7 @@ func TestDoDecodesData(t *testing.T) {
 
 func TestHTTP200WithErrorCode(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"code":402,"msg":"insufficient"}`))
+		_, _ = w.Write([]byte(`{"code":402,"msg":"insufficient"}`))
 	}))
 	defer srv.Close()
 	c, _ := newClient(t, srv.URL)
@@ -79,7 +79,7 @@ func TestAuthHeaderAndNoKeyLeak(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotAuth = r.Header.Get("Authorization")
 		w.WriteHeader(401)
-		w.Write([]byte(`{"code":401,"msg":"bad key k-secret"}`))
+		_, _ = w.Write([]byte(`{"code":401,"msg":"bad key k-secret"}`))
 	}))
 	defer srv.Close()
 	c, _ := newClient(t, srv.URL)
@@ -107,7 +107,7 @@ func seqServer(t *testing.T, hits *atomic.Int32, bodies ...string) *httptest.Ser
 		if i >= len(bodies) {
 			i = len(bodies) - 1
 		}
-		w.Write([]byte(bodies[i]))
+		_, _ = w.Write([]byte(bodies[i]))
 	}))
 }
 
@@ -143,7 +143,7 @@ func TestPostCreateNoRetryOn500(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
 		w.WriteHeader(500)
-		w.Write([]byte(`{"code":500,"msg":"boom"}`))
+		_, _ = w.Write([]byte(`{"code":500,"msg":"boom"}`))
 	}))
 	defer srv.Close()
 	c, _ := newClient(t, srv.URL)
@@ -181,7 +181,7 @@ func TestPostCreateRetries429(t *testing.T) {
 func TestDialErrorIsNotSent(t *testing.T) {
 	ln, _ := net.Listen("tcp", "127.0.0.1:0")
 	addr := ln.Addr().String()
-	ln.Close()
+	_ = ln.Close()
 	c, sleeps := newClient(t, "http://"+addr)
 	err := c.Do(context.Background(), api.Request{Method: "POST", Path: "/x", Body: 1}, nil)
 	ne, ok := err.(*api.NetError)
@@ -198,9 +198,9 @@ func TestServerHangupAfterBodyIsSent(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		hits.Add(1)
 		buf := make([]byte, 1024)
-		r.Body.Read(buf)
+		_, _ = r.Body.Read(buf)
 		conn, _, _ := w.(http.Hijacker).Hijack()
-		conn.Close()
+		_ = conn.Close()
 	}))
 	defer srv.Close()
 	c, sleeps := newClient(t, srv.URL)
@@ -217,7 +217,7 @@ func TestServerHangupAfterBodyIsSent(t *testing.T) {
 func TestUploadHostAndNon2xxNonJSON(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(404)
-		w.Write([]byte("<html>nope</html>"))
+		_, _ = w.Write([]byte("<html>nope</html>"))
 	}))
 	defer srv.Close()
 	c := api.New("k", func(n string) string {
@@ -259,10 +259,10 @@ func TestBodyFactoryMultipartRetriesAndDecodes(t *testing.T) {
 			t.Errorf("form err=%v a=%q", err, r.FormValue("a"))
 		}
 		if hits.Add(1) == 1 {
-			w.Write([]byte(`{"code":429,"msg":"slow"}`))
+			_, _ = w.Write([]byte(`{"code":429,"msg":"slow"}`))
 			return
 		}
-		w.Write([]byte(`{"success":true,"code":200,"msg":"ok","data":{"downloadUrl":"https://x/f"}}`))
+		_, _ = w.Write([]byte(`{"success":true,"code":200,"msg":"ok","data":{"downloadUrl":"https://x/f"}}`))
 	}))
 	defer srv.Close()
 	c, _ := newClient(t, srv.URL)

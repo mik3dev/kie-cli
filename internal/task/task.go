@@ -131,7 +131,7 @@ func Submit(ctx context.Context, c *api.Client, ledgerPath, model string, input 
 	}
 	entry := ledger.Entry{TaskID: data.TaskID, Model: model, State: "submitted", OutDir: outDir, CreatedAt: now}
 	if aerr := appendEntry(ledgerPath, entry); aerr != nil {
-		fmt.Fprintf(w, "warning: task %s was created but could not be recorded in the ledger: %v\n", data.TaskID, aerr)
+		_, _ = fmt.Fprintf(w, "warning: task %s was created but could not be recorded in the ledger: %v\n", data.TaskID, aerr)
 	}
 	return data.TaskID, nil
 }
@@ -163,7 +163,7 @@ func malformed2xx(ae *api.Error) bool {
 func uncertain(ledgerPath, model, outDir string, now time.Time, cause error, w io.Writer) error {
 	entry := ledger.Entry{Model: model, State: "unknown", OutDir: outDir, CreatedAt: now, Note: cause.Error()}
 	if aerr := appendEntry(ledgerPath, entry); aerr != nil {
-		fmt.Fprintf(w, "warning: could not record uncertain submit in the ledger: %v\n", aerr)
+		_, _ = fmt.Fprintf(w, "warning: could not record uncertain submit in the ledger: %v\n", aerr)
 	}
 	return &output.Error{Code: output.CodeSubmitUncertain, Message: uncertainMsg}
 }

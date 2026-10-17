@@ -78,13 +78,13 @@ func one(ctx context.Context, c *api.Client, u, outDir, base string) (File, erro
 	hc := downloadClient(c.HTTP)
 	resp, err := get(ctx, hc, u)
 	if err == nil && !ok(resp) {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		resp, err = viaDownloadURL(ctx, c, hc, u)
 	}
 	if err != nil {
 		return File{}, ioError(scrub(c, err.Error()), u)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	name, kind := nameAndKind(u, resp.Header.Get("Content-Type"))
 	dest, err := save(resp.Body, outDir, base, name)
 	if err != nil {
@@ -138,7 +138,7 @@ func viaDownloadURL(ctx context.Context, c *api.Client, hc *http.Client, u strin
 		return nil, err
 	}
 	if !ok(resp) {
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return nil, fmt.Errorf("download failed: HTTP %d", resp.StatusCode)
 	}
 	return resp, nil
@@ -155,7 +155,7 @@ var headerTimeout = 60 * time.Second
 // RoundTripper is used as is.
 func downloadClient(hc *http.Client) *http.Client {
 	cp := http.Client{}
-	var rt http.RoundTripper = http.DefaultTransport
+	rt := http.DefaultTransport
 	if hc != nil {
 		cp = *hc
 		if hc.Transport != nil {
@@ -236,9 +236,9 @@ func save(body io.Reader, outDir, base, ext string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer os.Remove(part.Name())
+	defer func() { _ = os.Remove(part.Name()) }()
 	if _, err := io.Copy(part, body); err != nil {
-		part.Close()
+		_ = part.Close()
 		return "", err
 	}
 	if err := part.Close(); err != nil {
@@ -279,18 +279,18 @@ func copyExclusive(src, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 	out, err := os.OpenFile(dest, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 	if err != nil {
 		return err
 	}
 	if _, err := io.Copy(out, in); err != nil {
-		out.Close()
-		os.Remove(dest)
+		_ = out.Close()
+		_ = os.Remove(dest)
 		return err
 	}
 	if err := out.Close(); err != nil {
-		os.Remove(dest)
+		_ = os.Remove(dest)
 		return err
 	}
 	return nil

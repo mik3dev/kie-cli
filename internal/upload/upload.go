@@ -101,7 +101,7 @@ func openMultipart(path, uploadPath, name string) (string, io.ReadCloser, error)
 	pr, pw := io.Pipe()
 	mw := multipart.NewWriter(pw)
 	go func() {
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		err := mw.WriteField("uploadPath", uploadPath)
 		if err == nil {
 			err = mw.WriteField("fileName", name)

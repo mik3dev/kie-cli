@@ -241,12 +241,12 @@ func firstNonEmpty(a, b string) string {
 // recordFinal appends the final state; failures only warn (the task result is already known).
 func recordFinal(paths config.Paths, a finishArgs, state, note string, warn io.Writer) {
 	if err := config.EnsureHome(paths); err != nil {
-		fmt.Fprintf(warn, "warning: could not record task %s in the ledger: %v\n", a.id, err)
+		_, _ = fmt.Fprintf(warn, "warning: could not record task %s in the ledger: %v\n", a.id, err)
 		return
 	}
 	e := ledger.Entry{TaskID: a.id, Model: a.model, State: state, OutDir: a.outDir, CreatedAt: a.createdAt, Note: note}
 	if err := ledger.Append(paths.Ledger, e); err != nil {
-		fmt.Fprintf(warn, "warning: could not record task %s in the ledger: %v\n", a.id, err)
+		_, _ = fmt.Fprintf(warn, "warning: could not record task %s in the ledger: %v\n", a.id, err)
 	}
 }
 

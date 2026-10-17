@@ -40,7 +40,7 @@ func TestGetMissAndExpired(t *testing.T) {
 
 func TestCorruptFileIsMiss(t *testing.T) {
 	dir := t.TempDir()
-	os.WriteFile(filepath.Join(dir, "bad.json"), []byte("{nope"), 0o600)
+	_ = os.WriteFile(filepath.Join(dir, "bad.json"), []byte("{nope"), 0o600)
 	var v int
 	if hit, err := cache.Get(dir, "bad", time.Hour, time.Now(), &v); hit || err != nil {
 		t.Fatalf("corrupt: hit=%v err=%v", hit, err)
@@ -52,7 +52,7 @@ func TestPutErrors(t *testing.T) {
 		t.Error("unencodable value: want error")
 	}
 	f := filepath.Join(t.TempDir(), "file")
-	os.WriteFile(f, nil, 0o600)
+	_ = os.WriteFile(f, nil, 0o600)
 	if err := cache.Put(f, "x", 1); err == nil {
 		t.Error("dir is a file: want error")
 	}
@@ -60,7 +60,7 @@ func TestPutErrors(t *testing.T) {
 
 func TestGetStatError(t *testing.T) {
 	f := filepath.Join(t.TempDir(), "file")
-	os.WriteFile(f, nil, 0o600)
+	_ = os.WriteFile(f, nil, 0o600)
 	var v int
 	if _, err := cache.Get(f, "x", time.Hour, time.Now(), &v); err == nil {
 		t.Error("ENOTDIR: want error")

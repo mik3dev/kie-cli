@@ -174,7 +174,7 @@ func (c *Client) once(ctx context.Context, r Request, payload []byte, out any) e
 		if ferr != nil {
 			return fmt.Errorf("open request body: %w", ferr)
 		}
-		defer rc.Close()
+		defer func() { _ = rc.Close() }()
 		body, contentType = rc, ct
 	}
 	hreq, err := http.NewRequestWithContext(ctx, r.Method, u, body)
@@ -196,7 +196,7 @@ func (c *Client) once(ctx context.Context, r Request, payload []byte, out any) e
 		c.debugf("%s %s -> error\n", r.Method, u)
 		return &NetError{Sent: wroteHeaders.Load(), Err: c.scrubErr(err)}
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	c.debugf("%s %s -> %d\n", r.Method, u, resp.StatusCode)
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxBody))
 	if err != nil {
@@ -234,7 +234,7 @@ func (c *Client) debugf(format string, args ...any) {
 	if c.Debug == nil {
 		return
 	}
-	fmt.Fprintf(c.Debug, "Authorization: Bearer ****\n"+format, args...)
+	_, _ = fmt.Fprintf(c.Debug, "Authorization: Bearer ****\n"+format, args...)
 }
 
 func (c *Client) scrub(s string) string {

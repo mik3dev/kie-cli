@@ -36,10 +36,10 @@ func liveServer(t *testing.T, hits *atomic.Int32) *httptest.Server {
 		case strings.HasSuffix(r.URL.Path, "/success-rate"):
 			data = read("success-rate/ai-music-api__extend.json")
 		default:
-			w.Write([]byte(`{"code":404,"msg":"nf"}`))
+			_, _ = w.Write([]byte(`{"code":404,"msg":"nf"}`))
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]any{"code": 200, "msg": "ok", "data": data})
+		_ = json.NewEncoder(w).Encode(map[string]any{"code": 200, "msg": "ok", "data": data})
 	}))
 	t.Cleanup(srv.Close)
 	return srv
@@ -63,7 +63,7 @@ func TestCreditsCommand(t *testing.T) {
 	code, m, _ := run(t, apiEnv(srv), "credits")
 	want, _ := os.ReadFile("../../testdata/live/credit.json")
 	var wantN float64
-	json.Unmarshal(want, &wantN)
+	_ = json.Unmarshal(want, &wantN)
 	if code != 0 || m["ok"] != true || m["credits"] != wantN {
 		t.Fatalf("code=%d m=%v want=%v", code, m, wantN)
 	}
@@ -134,7 +134,7 @@ func TestModelsPriceAndHealth(t *testing.T) {
 
 func TestModelsAPIErrorMapsToExit(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write([]byte(`{"code":401,"msg":"bad key"}`))
+		_, _ = w.Write([]byte(`{"code":401,"msg":"bad key"}`))
 	}))
 	defer srv.Close()
 	code, m, _ := run(t, apiEnv(srv), "models", "list")

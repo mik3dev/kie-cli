@@ -20,12 +20,12 @@ func (e *Error) Error() string {
 // AsOutput maps the kie code to the CLI output contract.
 func (e *Error) AsOutput() *output.Error {
 	code := output.CodeAPI
-	switch {
-	case e.KieCode == 401:
+	switch e.KieCode {
+	case 401:
 		code = output.CodeAuth
-	case e.KieCode == 402:
+	case 402:
 		code = output.CodeCredits
-	case e.KieCode == 429 || e.KieCode == 455 || e.KieCode == 433:
+	case 429, 455, 433:
 		code = output.CodeRateLimit
 	}
 	return &output.Error{

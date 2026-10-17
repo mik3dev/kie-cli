@@ -60,7 +60,7 @@ func (w Waiter) Wait(ctx context.Context, c *api.Client, id string, timeout time
 		if rec.State != prev {
 			prev = rec.State
 			if w.Progress != nil {
-				fmt.Fprintf(w.Progress, "state: %s\n", rec.State)
+				_, _ = fmt.Fprintf(w.Progress, "state: %s\n", rec.State)
 			}
 		}
 		switch rec.State {

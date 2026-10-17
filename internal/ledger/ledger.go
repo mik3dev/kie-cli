@@ -34,7 +34,7 @@ func Append(path string, e Entry) error {
 		return fmt.Errorf("open %s: %w", path, err)
 	}
 	if _, err := f.Write(append(line, '\n')); err != nil {
-		f.Close()
+		_ = f.Close()
 		return fmt.Errorf("write %s: %w", path, err)
 	}
 	if err := f.Close(); err != nil {
@@ -84,7 +84,7 @@ func parseLines(data []byte, warn io.Writer) []Entry {
 		var e Entry
 		if err := json.Unmarshal(raw, &e); err != nil {
 			if warn != nil {
-				fmt.Fprintf(warn, "warning: skipping corrupt ledger line %d: %v\n", i+1, err)
+				_, _ = fmt.Fprintf(warn, "warning: skipping corrupt ledger line %d: %v\n", i+1, err)
 			}
 			continue
 		}

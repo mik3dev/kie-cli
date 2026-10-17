@@ -214,7 +214,7 @@ func TestSubmitSentNetErrorIsUncertain(t *testing.T) {
 	// Server accepts the request then drops the connection without answering.
 	c := serve(t, func(w http.ResponseWriter, _ *http.Request) {
 		conn, _, _ := w.(http.Hijacker).Hijack()
-		conn.Close()
+		_ = conn.Close()
 	})
 	lp := ledgerPath(t)
 	_, err := task.Submit(context.Background(), c, lp, "m", nil, "", submitNow)
@@ -232,7 +232,7 @@ func TestSubmitDialErrorRetriesThenFailsNotUncertain(t *testing.T) {
 		t.Fatal(err)
 	}
 	addr := ln.Addr().String()
-	ln.Close()
+	_ = ln.Close()
 	c := newClient(t, "http://"+addr)
 	lp := ledgerPath(t)
 	_, err = task.Submit(context.Background(), c, lp, "m", nil, "", submitNow)

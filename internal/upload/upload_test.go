@@ -164,8 +164,8 @@ func TestUploadMultipartFields(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		f.Close()
-		w.Write([]byte(`{"success":true,"code":200,"msg":"ok","data":{"downloadUrl":"https://tmp/a.png"}}`))
+		_ = f.Close()
+		_, _ = w.Write([]byte(`{"success":true,"code":200,"msg":"ok","data":{"downloadUrl":"https://tmp/a.png"}}`))
 	})
 	got, err := upload.File(context.Background(), c, "a.png")
 	if err != nil || got != "https://tmp/a.png" {
@@ -176,7 +176,7 @@ func TestUploadMultipartFields(t *testing.T) {
 func TestUploadAPIErrorMapped(t *testing.T) {
 	inDir(t, "a.png")
 	c := uploadClient(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(`{"code":401,"msg":"bad key"}`))
+		_, _ = w.Write([]byte(`{"code":401,"msg":"bad key"}`))
 	})
 	_, err := upload.File(context.Background(), c, "a.png")
 	var oe *output.Error
@@ -196,7 +196,7 @@ func TestUploadTooLarge(t *testing.T) {
 	if err := f.Truncate(101 << 20); err != nil {
 		t.Fatal(err)
 	}
-	f.Close()
+	_ = f.Close()
 	_, err = upload.File(context.Background(), c, "big.mp4")
 	var oe *output.Error
 	if !errors.As(err, &oe) || oe.Code != "validation" || hits.Load() != 0 {

@@ -80,9 +80,9 @@ func warnWriter(cmd *cobra.Command, deps Deps) io.Writer {
 func readKey(deps Deps) (string, error) {
 	var raw string
 	if f, ok := deps.Stdin.(*os.File); ok && term.IsTerminal(int(f.Fd())) {
-		io.WriteString(deps.Stderr, "API key: ")
+		_, _ = io.WriteString(deps.Stderr, "API key: ")
 		b, err := term.ReadPassword(int(f.Fd()))
-		io.WriteString(deps.Stderr, "\n")
+		_, _ = io.WriteString(deps.Stderr, "\n")
 		if err != nil {
 			return "", &output.Error{Code: output.CodeIO, Message: "read key: " + err.Error()}
 		}

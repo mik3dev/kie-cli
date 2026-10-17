@@ -70,7 +70,7 @@ func Load(p Paths, warn io.Writer) (Config, error) {
 		return Config{}, fmt.Errorf("stat %s: %w", p.Config, err)
 	}
 	if perm := fi.Mode().Perm(); perm&0o077 != 0 {
-		fmt.Fprintf(warn, "warning: %s permissions are %04o, should be 0600\n", p.Config, perm)
+		_, _ = fmt.Fprintf(warn, "warning: %s permissions are %04o, should be 0600\n", p.Config, perm)
 	}
 	data, err := os.ReadFile(p.Config)
 	if err != nil {
@@ -96,13 +96,13 @@ func Save(p Paths, c Config) error {
 	if err != nil {
 		return fmt.Errorf("create temp config: %w", err)
 	}
-	defer os.Remove(tmp.Name()) // no-op after a successful rename
+	defer func() { _ = os.Remove(tmp.Name()) }() // no-op after a successful rename
 	if err := tmp.Chmod(filePerm); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return err
 	}
 	if err := tmp.Close(); err != nil {

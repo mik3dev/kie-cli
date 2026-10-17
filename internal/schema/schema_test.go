@@ -90,8 +90,8 @@ func TestResolveCycleTerminates(t *testing.T) {
 func TestResolveDoesNotMutate(t *testing.T) {
 	raw := `{"a":{"$ref":"#/b"},"b":{"x":[1,{"$ref":"#/c"}]},"c":{"y":1}}`
 	var doc, snap map[string]any
-	json.Unmarshal([]byte(raw), &doc)
-	json.Unmarshal([]byte(raw), &snap)
+	_ = json.Unmarshal([]byte(raw), &doc)
+	_ = json.Unmarshal([]byte(raw), &snap)
 	got, err := schema.Resolve(doc, doc["a"])
 	if err != nil {
 		t.Fatal(err)
@@ -269,7 +269,7 @@ func TestFetchCachesAndRefresh(t *testing.T) {
 		if r.URL.Path != "/api/v1/models/a/b/schema" {
 			t.Errorf("path %s", r.URL.Path)
 		}
-		w.Write([]byte(`{"code":200,"msg":"ok","data":{"model":"a/b","openapi":{"paths":{}}}}`))
+		_, _ = w.Write([]byte(`{"code":200,"msg":"ok","data":{"model":"a/b","openapi":{"paths":{}}}}`))
 	}))
 	defer srv.Close()
 	c := api.New("k", func(n string) string {
@@ -300,7 +300,7 @@ func TestFetchCachesAndRefresh(t *testing.T) {
 
 func TestFetchNullData(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.Write([]byte(`{"code":200,"msg":"ok","data":null}`))
+		_, _ = w.Write([]byte(`{"code":200,"msg":"ok","data":null}`))
 	}))
 	defer srv.Close()
 	c := api.New("k", func(n string) string {
