@@ -174,11 +174,11 @@ func TestSummarizeOneOfVariants(t *testing.T) {
 	}
 	// base required/props are merged into each variant
 	for _, v := range s.Variants {
-		if p, ok := fieldByName(v, "prompt"); !ok || !p.Required {
+		if p, ok := fieldByName(v.Fields, "prompt"); !ok || !p.Required {
 			t.Fatalf("variant lacks base prompt: %+v", v)
 		}
 	}
-	b, _ := fieldByName(s.Variants[1], "b")
+	b, _ := fieldByName(s.Variants[1].Fields, "b")
 	if b.Minimum == nil || *b.Minimum != 1 || *b.Maximum != 5 || !b.Required {
 		t.Fatalf("b: %+v", b)
 	}
@@ -312,5 +312,33 @@ func TestFetchNullData(t *testing.T) {
 	d, err := schema.Fetch(context.Background(), c, t.TempDir(), "m", false, time.Now())
 	if err != nil || d.Model != "m" || !d.Null() {
 		t.Fatalf("%v %+v", err, d)
+	}
+}
+
+func TestKlingI2VVariantsNotesItemFields(t *testing.T) {
+	d := load(t, "../../testdata/live/schemas/kling-3.0-omni__image-to-video.json")
+	s, err := schema.Summarize(d)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(s.Variants) < 2 {
+		t.Fatalf("variants=%d", len(s.Variants))
+	}
+	seen := map[string]bool{}
+	for _, v := range s.Variants {
+		if v.Title == "" || seen[v.Title] {
+			t.Fatalf("titles must be non-empty and distinct: %+v", s.Variants)
+		}
+		seen[v.Title] = true
+	}
+	if s.Notes == "" || len([]rune(s.Notes)) > 600 {
+		t.Fatalf("notes len=%d", len([]rune(s.Notes)))
+	}
+	mp, ok := fieldByName(s.Variants[0].Fields, "multi_prompt")
+	if !ok {
+		t.Fatal("no multi_prompt")
+	}
+	if p, ok := fieldByName(mp.ItemFields, "prompt"); !ok || !p.Required || p.Type != "string" {
+		t.Fatalf("ItemFields: %+v", mp.ItemFields)
 	}
 }

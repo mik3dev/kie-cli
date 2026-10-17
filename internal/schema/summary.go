@@ -5,7 +5,10 @@ import (
 	"strings"
 )
 
-const maxDescRunes = 300
+const (
+	maxDescRunes  = 300
+	maxNotesRunes = 600
+)
 
 // Field is one input key as an agent needs to know it.
 type Field struct {
@@ -19,6 +22,15 @@ type Field struct {
 	Maximum     *float64 `json:"maximum,omitempty"`
 	MaxItems    *int     `json:"maxItems,omitempty"`
 	Items       string   `json:"items,omitempty"`
+	// ItemFields describes the element object of an array of objects, one level deep.
+	ItemFields []Field `json:"itemFields,omitempty"`
+}
+
+// Variant is one alternative input shape of a oneOf/anyOf.
+type Variant struct {
+	Title       string  `json:"title,omitempty"`
+	Description string  `json:"description,omitempty"`
+	Fields      []Field `json:"fields"`
 }
 
 // Summary is the compact, agent-facing view of a model's input.
@@ -29,13 +41,16 @@ type Summary struct {
 	Job      bool      `json:"job"`
 	Null     bool      `json:"null,omitempty"`
 	Fields   []Field   `json:"fields"`
-	Variants [][]Field `json:"variants,omitempty"`
+	Variants []Variant `json:"variants,omitempty"`
+	// Notes is the input object's own description (rules across fields).
+	Notes string `json:"notes,omitempty"`
 }
 
 // branch is one flattened alternative: its properties and required names.
 type branch struct {
-	props map[string]any
-	req   map[string]bool
+	props       map[string]any
+	req         map[string]bool
+	title, desc string
 }
 
 // Summarize lists the input fields of d. A oneOf/anyOf with per-branch
@@ -53,13 +68,16 @@ func Summarize(d Doc) (Summary, error) {
 	if err != nil {
 		return Summary{}, err
 	}
+	if d, ok := in["description"].(string); ok {
+		s.Notes = truncateTo(d, maxNotesRunes)
+	}
 	branches := expand(in)
 	if len(branches) == 1 {
 		s.Fields = fieldsOf(branches[0])
 		return s, nil
 	}
 	for _, b := range branches {
-		s.Variants = append(s.Variants, fieldsOf(b))
+		s.Variants = append(s.Variants, Variant{Title: b.title, Description: truncate(b.desc), Fields: fieldsOf(b)})
 	}
 	return s, nil
 }
@@ -102,12 +120,19 @@ func expand(node map[string]any) []branch {
 		b := branch{props: map[string]any{}, req: map[string]bool{}}
 		mergeInto(&b, base)
 		mergeInto(&b, a)
+		b.title, b.desc = a.title, a.desc
 		out = append(out, b)
 	}
 	return out
 }
 
 func mergeOwn(b *branch, node map[string]any) {
+	if t, ok := node["title"].(string); ok {
+		b.title = t
+	}
+	if t, ok := node["description"].(string); ok {
+		b.desc = t
+	}
 	if props, ok := node["properties"].(map[string]any); ok {
 		for k, v := range props {
 			b.props[k] = v
@@ -131,11 +156,16 @@ func mergeInto(dst *branch, src branch) {
 	}
 }
 
-func fieldsOf(b branch) []Field {
+func fieldsOf(b branch) []Field { return buildFields(b, true) }
+
+// flatFields summarizes item properties without descending further.
+func flatFields(b branch) []Field { return buildFields(b, false) }
+
+func buildFields(b branch, deep bool) []Field {
 	fs := make([]Field, 0, len(b.props))
 	for name, raw := range b.props {
 		p, _ := raw.(map[string]any)
-		f := fieldFrom(name, p)
+		f := fieldFrom(name, p, deep)
 		f.Required = b.req[name]
 		fs = append(fs, f)
 	}
@@ -148,7 +178,7 @@ func fieldsOf(b branch) []Field {
 	return fs
 }
 
-func fieldFrom(name string, p map[string]any) Field {
+func fieldFrom(name string, p map[string]any, deep bool) Field {
 	f := Field{Name: name, Type: typeOf(p), Default: p["default"]}
 	if e, ok := p["enum"].([]any); ok && len(e) > 0 {
 		f.Enum = e
@@ -164,6 +194,11 @@ func fieldFrom(name string, p map[string]any) Field {
 	}
 	if items, ok := p["items"].(map[string]any); ok {
 		f.Items = typeOf(items)
+		if props, ok := items["properties"].(map[string]any); ok && len(props) > 0 && deep {
+			ib := branch{props: props, req: map[string]bool{}}
+			mergeOwn(&ib, items)
+			f.ItemFields = flatFields(ib)
+		}
 	}
 	return f
 }
@@ -203,10 +238,12 @@ func number(v any) *float64 {
 	return nil
 }
 
-func truncate(s string) string {
+func truncate(s string) string { return truncateTo(s, maxDescRunes) }
+
+func truncateTo(s string, n int) string {
 	r := []rune(s)
-	if len(r) <= maxDescRunes {
+	if len(r) <= n {
 		return s
 	}
-	return string(r[:maxDescRunes])
+	return string(r[:n])
 }
