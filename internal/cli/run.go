@@ -102,7 +102,7 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 		sch = nil
 	}
 	input = schema.Coerce(sch, input)
-	input, uploaded, err := upload.ResolveLocal(cmd.Context(), input, func(ctx context.Context, p string) (string, error) {
+	input, uploaded, err := upload.ResolveLocal(cmd.Context(), input, nil, func(ctx context.Context, p string) (string, error) {
 		return upload.File(ctx, c, p)
 	})
 	if err != nil {
