@@ -2,9 +2,11 @@
 package cli
 
 import (
+	"errors"
 	"io"
 	"time"
 
+	"github.com/mik3dev/kie-cli/internal/api"
 	"github.com/mik3dev/kie-cli/internal/output"
 	"github.com/spf13/cobra"
 )
@@ -32,7 +34,7 @@ func NewRoot(deps Deps) *cobra.Command {
 	root.SetFlagErrorFunc(func(_ *cobra.Command, err error) error {
 		return &output.Error{Code: output.CodeUsage, Message: err.Error()}
 	})
-	root.AddCommand(newVersionCmd(deps), newAuthCmd(deps))
+	root.AddCommand(newVersionCmd(deps), newAuthCmd(deps), newModelsCmd(deps), newCreditsCmd(deps))
 	return root
 }
 
@@ -55,6 +57,10 @@ func run(root *cobra.Command, deps Deps, args []string) int {
 	// Errors raised before any command ran (unknown command, bad args) are usage errors.
 	if _, ok := err.(*output.Error); !ok && !started {
 		err = &output.Error{Code: output.CodeUsage, Message: err.Error()}
+	}
+	var ae *api.Error
+	if errors.As(err, &ae) {
+		err = ae.AsOutput()
 	}
 	return output.Fail(deps.Stdout, err)
 }
