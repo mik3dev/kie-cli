@@ -52,7 +52,7 @@ func newCatalog(cmd *cobra.Command, deps Deps) (*catalog.Service, error) {
 }
 
 func newModelsCmd(deps Deps) *cobra.Command {
-	models := &cobra.Command{Use: "models", Short: "Browse the kie.ai model catalog"}
+	models := &cobra.Command{Use: "models", Short: "Browse the kie.ai model catalog", RunE: groupRunE}
 	models.AddCommand(newModelsListCmd(deps), newModelsSearchCmd(deps), newModelsPriceCmd(deps), newModelsHealthCmd(deps), newModelsSchemaCmd(deps))
 	return models
 }

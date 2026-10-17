@@ -197,3 +197,17 @@ func TestLoadFailsWhenConfigIsADirectory(t *testing.T) {
 		t.Fatal("expected error")
 	}
 }
+
+func TestResolveKeyTrimsWhitespace(t *testing.T) {
+	k, src, err := config.ResolveKey(envOf(map[string]string{"KIE_API_KEY": "key\n"}), config.Config{})
+	if err != nil || k != "key" || src != "env" {
+		t.Errorf("env: k=%q src=%q err=%v", k, src, err)
+	}
+	k, src, err = config.ResolveKey(envOf(map[string]string{"KIE_API_KEY": " \t\n"}), config.Config{APIKey: " cfg \n"})
+	if err != nil || k != "cfg" || src != "config" {
+		t.Errorf("blank env must fall back: k=%q src=%q err=%v", k, src, err)
+	}
+	if _, _, err := config.ResolveKey(envOf(map[string]string{"KIE_API_KEY": "  "}), config.Config{APIKey: "\n"}); err == nil {
+		t.Error("whitespace-only keys must count as unset")
+	}
+}

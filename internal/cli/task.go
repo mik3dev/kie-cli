@@ -17,7 +17,7 @@ import (
 const defaultTaskListLimit = 20
 
 func newTaskCmd(deps Deps) *cobra.Command {
-	task := &cobra.Command{Use: "task", Short: "Inspect locally recorded tasks"}
+	task := &cobra.Command{Use: "task", Short: "Inspect locally recorded tasks", RunE: groupRunE}
 	task.AddCommand(newTaskListCmd(deps), newTaskGetCmd(deps), newTaskWaitCmd(deps))
 	return task
 }

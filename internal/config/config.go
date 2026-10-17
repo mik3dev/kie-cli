@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/mik3dev/kie-cli/internal/output"
 )
@@ -113,13 +114,14 @@ func Save(p Paths, c Config) error {
 	return nil
 }
 
-// ResolveKey returns the API key from KIE_API_KEY (if non-empty) or the config.
+// ResolveKey returns the API key from KIE_API_KEY or the config. Both are
+// trimmed; whitespace-only counts as unset.
 func ResolveKey(env func(string) string, c Config) (key, source string, err error) {
-	if k := env("KIE_API_KEY"); k != "" {
+	if k := strings.TrimSpace(env("KIE_API_KEY")); k != "" {
 		return k, "env", nil
 	}
-	if c.APIKey != "" {
-		return c.APIKey, "config", nil
+	if k := strings.TrimSpace(c.APIKey); k != "" {
+		return k, "config", nil
 	}
 	return "", "", &output.Error{Code: output.CodeAuth, Message: "no API key: set KIE_API_KEY or run 'kie-cli auth login'"}
 }

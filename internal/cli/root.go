@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -35,6 +36,7 @@ func NewRoot(deps Deps) *cobra.Command {
 		Short:         "Generate media via kie.ai (JSON output for agents)",
 		SilenceUsage:  true,
 		SilenceErrors: true,
+		RunE:          groupRunE,
 	}
 	root.SetOut(deps.Stderr)
 	root.SetErr(deps.Stderr)
@@ -45,6 +47,12 @@ func NewRoot(deps Deps) *cobra.Command {
 	})
 	root.AddCommand(newVersionCmd(deps), newAuthCmd(deps), newModelsCmd(deps), newCreditsCmd(deps), newTaskCmd(deps), newRunCmd(deps))
 	return root
+}
+
+// groupRunE makes a non-leaf command fail with a usage error (exit 2) instead
+// of cobra's default of printing help and exiting 0 with empty stdout.
+func groupRunE(_ *cobra.Command, args []string) error {
+	return &output.Error{Code: output.CodeUsage, Message: "unknown or missing subcommand: " + strings.Join(args, " ")}
 }
 
 // Execute runs the CLI and returns the process exit code.

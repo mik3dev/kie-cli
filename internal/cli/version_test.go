@@ -60,3 +60,37 @@ func TestPersistentFlagsAccepted(t *testing.T) {
 		t.Fatalf("exit = %d", code)
 	}
 }
+
+func TestGroupCommandsWithoutSubcommandAreUsageErrors(t *testing.T) {
+	cases := map[string][]string{
+		"no args":     {},
+		"task":        {"task"},
+		"models":      {"models"},
+		"auth":        {"auth"},
+		"models typo": {"models", "lst"},
+		"task typo":   {"task", "lst"},
+	}
+	for name, args := range cases {
+		t.Run(name, func(t *testing.T) {
+			var out, errw bytes.Buffer
+			if code := cli.Execute(newDeps(&out, &errw), args); code != 2 {
+				t.Fatalf("exit = %d, stdout=%q", code, out.String())
+			}
+			var m map[string]any
+			if err := json.Unmarshal(out.Bytes(), &m); err != nil {
+				t.Fatalf("stdout not single JSON: %v (%q)", err, out.String())
+			}
+			e, _ := m["error"].(map[string]any)
+			if m["ok"] != false || e["code"] != "usage" || !strings.HasPrefix(e["message"].(string), "unknown or missing subcommand") {
+				t.Errorf("m = %v", m)
+			}
+		})
+	}
+}
+
+func TestExplicitHelpStillExitsZero(t *testing.T) {
+	var out, errw bytes.Buffer
+	if code := cli.Execute(newDeps(&out, &errw), []string{"task", "--help"}); code != 0 {
+		t.Fatalf("exit = %d", code)
+	}
+}

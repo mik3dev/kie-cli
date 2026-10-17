@@ -14,7 +14,7 @@ import (
 )
 
 func newAuthCmd(deps Deps) *cobra.Command {
-	auth := &cobra.Command{Use: "auth", Short: "Manage the kie.ai API key"}
+	auth := &cobra.Command{Use: "auth", Short: "Manage the kie.ai API key", RunE: groupRunE}
 	auth.AddCommand(newAuthLoginCmd(deps), newAuthStatusCmd(deps))
 	return auth
 }
