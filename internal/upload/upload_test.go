@@ -221,3 +221,16 @@ func TestResolveLocalCustomPredicate(t *testing.T) {
 		t.Fatalf("uploaded = %v", uploaded)
 	}
 }
+
+func TestFileKeyExcludesNonFileNames(t *testing.T) {
+	for _, k := range []string{"audio_id", "audio_ids", "audio_weight", "image_size", "audio_setting", "audio_settings", "max_images", "generate_audio"} {
+		if upload.FileKey(k) {
+			t.Errorf("FileKey(%q) should be false", k)
+		}
+	}
+	for _, k := range []string{"image_urls", "image", "audio_url", "video_url", "mask"} {
+		if !upload.FileKey(k) {
+			t.Errorf("FileKey(%q) should be true", k)
+		}
+	}
+}

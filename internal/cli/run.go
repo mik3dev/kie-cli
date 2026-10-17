@@ -189,7 +189,7 @@ func prepareInput(cmd *cobra.Command, deps Deps, doc schema.Doc, model string, r
 		return p, err
 	}
 	p.input = schema.Coerce(sch, raw)
-	p.isFile = func(k string) bool { return upload.FileKey(k) || schema.HasURIFormat(sch, k) }
+	p.isFile = fileKeyFunc(sch)
 	var given []string
 	p.checked, given, err = upload.ResolveLocal(cmd.Context(), p.input, p.isFile, func(_ context.Context, path string) (string, error) {
 		ph := pendingUploadHost + url.PathEscape(filepath.Base(path))

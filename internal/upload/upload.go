@@ -26,8 +26,13 @@ const (
 
 var (
 	fileKeyWords = []string{"url", "image", "video", "audio", "file", "mask"}
-	remotePrefix = []string{"http://", "https://", "oss://", "asset://"}
-	mediaExts    = map[string]bool{
+	// nonFileSuffixes/nonFilePrefixes name keys that contain a file word but never hold a file.
+	// ponytail: small explicit list; ceiling = a new non-file key with a file word (and no schema
+	// to say so) is uploaded when its value is an existing local file. Extend the list then.
+	nonFileSuffixes = []string{"_id", "_ids", "_size", "_weight", "_setting", "_settings"}
+	nonFilePrefixes = []string{"max_", "generate_"}
+	remotePrefix    = []string{"http://", "https://", "oss://", "asset://"}
+	mediaExts       = map[string]bool{
 		".png": true, ".jpg": true, ".jpeg": true, ".webp": true, ".gif": true, ".bmp": true,
 		".mp4": true, ".mov": true, ".webm": true, ".mkv": true, ".avi": true,
 		".mp3": true, ".wav": true, ".m4a": true, ".aac": true, ".ogg": true, ".flac": true,
@@ -42,6 +47,16 @@ func validation(format string, args ...any) *output.Error {
 // ponytail: name heuristic; stage 2 switches to schema-based detection.
 func FileKey(key string) bool {
 	k := strings.ToLower(key)
+	for _, x := range nonFileSuffixes {
+		if strings.HasSuffix(k, x) {
+			return false
+		}
+	}
+	for _, x := range nonFilePrefixes {
+		if strings.HasPrefix(k, x) {
+			return false
+		}
+	}
 	for _, w := range fileKeyWords {
 		if strings.Contains(k, w) {
 			return true
