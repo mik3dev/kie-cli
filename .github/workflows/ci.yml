@@ -23,6 +23,8 @@ jobs:
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.13.2
+          # Build golangci-lint with the job's Go: the prebuilt binary breaks when setup-go ships a newer patch release.
+          install-mode: goinstall
       - name: Cross-platform build checks
         run: |
           GOOS=windows go vet ./...
