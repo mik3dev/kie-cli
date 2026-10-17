@@ -43,14 +43,14 @@ presets:
     params:
       custom_mode: false
       instrumental: false
-      model: V5
+      model: V6
   - name: instrumental
     description: Instrumental track without vocals (12 credits, 2 tracks). Missing fields - prompt.
     model: ai-music-api/generate
     params:
       custom_mode: false
       instrumental: true
-      model: V5
+      model: V6
   - name: voz
     description: Multilingual text-to-speech narration (12 credits per 1000 characters). Missing fields - text.
     model: elevenlabs/text-to-speech-multilingual-v2

@@ -46,7 +46,7 @@ Special cases:
 
 - `--no-wait` returns at once with `taskId`, `state: "submitted"`, `ids.task_id`. Collect it later with `kie-cli task wait <taskId>` (same `--out`, `--no-download`, `--timeout`) or peek with `kie-cli task get <taskId>`.
 - Synchronous models answer immediately: `sync: true`, no `taskId`; `files`/`ids` are filled when the response has media.
-- `--out DIR` sets the download directory (default `./kie-output`). `--no-download` skips downloading; the URLs stay in `result`.
+- `--out DIR` sets the download directory (default: config `out_dir`, else `./kie-output`). `--no-download` skips downloading; the URLs stay in `result`.
 - `--timeout 20m` caps the wait (default 10m, 30m for video models).
 - `kie-cli task list [--limit N]` shows recent local tasks (newest first), useful to recover a taskId.
 
