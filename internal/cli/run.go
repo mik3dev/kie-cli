@@ -69,8 +69,14 @@ func addFinishFlags(cmd *cobra.Command) {
 }
 
 func runModel(cmd *cobra.Command, deps Deps, model string) error {
+	var ref presetRef
 	if strings.HasPrefix(model, "@") {
-		return usageErr("presets arrive in stage 5")
+		p, err := lookupPreset(deps, model)
+		if err != nil {
+			return err
+		}
+		ref = presetRef{name: p.Name, params: p.Params}
+		model = p.Model
 	}
 	flags := cmd.Flags()
 	timeoutFlag, _ := flags.GetDuration("timeout")
@@ -100,7 +106,7 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 	if doc.Null() {
 		_, _ = fmt.Fprintln(warn, "warning: "+nullSchemaWarning)
 	}
-	prep, err := prepareInput(cmd, deps, doc, model, warn)
+	prep, err := prepareInput(cmd, deps, doc, model, ref, warn)
 	if err != nil {
 		return err
 	}
@@ -127,17 +133,17 @@ func runModel(cmd *cobra.Command, deps Deps, model string) error {
 		return err
 	}
 	if noWait, _ := flags.GetBool("no-wait"); noWait {
-		return output.Success(deps.Stdout, map[string]any{
+		return output.Success(deps.Stdout, withPreset(map[string]any{
 			"taskId": id, "model": model, "state": "submitted", "uploaded": nonNil(uploaded),
 			"ids": result.IDs{TaskID: id},
-		})
+		}, ref.name))
 	}
 	timeout := timeoutFlag
 	if timeout == 0 {
 		timeout = defaultTimeoutFor(m.TaskType)
 	}
 	return finishTask(cmd, deps, c, paths, finishArgs{
-		id: id, model: model, outDir: outDir, timeout: timeout, createdAt: now, uploaded: uploaded,
+		id: id, model: model, outDir: outDir, timeout: timeout, createdAt: now, uploaded: uploaded, preset: ref.name,
 	})
 }
 
@@ -158,18 +164,27 @@ type preparedInput struct {
 	isFile   func(string) bool
 	pending  []pendingUpload
 	problems []schema.Problem // only set under --no-validate
+	preset   string           // preset name when invoked via @name
+}
+
+// withPreset returns out with "preset" set when the run came from a preset.
+func withPreset(out map[string]any, name string) map[string]any {
+	if name != "" {
+		out["preset"] = name
+	}
+	return out
 }
 
 // prepareInput builds, coerces and validates the input without any network access.
 // Invalid input is a validation error unless --no-validate is set.
-func prepareInput(cmd *cobra.Command, deps Deps, doc schema.Doc, model string, warn io.Writer) (preparedInput, error) {
-	var p preparedInput
+func prepareInput(cmd *cobra.Command, deps Deps, doc schema.Doc, model string, ref presetRef, warn io.Writer) (preparedInput, error) {
+	p := preparedInput{preset: ref.name}
 	sch, err := doc.InputSchema()
 	if err != nil {
 		_, _ = fmt.Fprintf(warn, "warning: cannot read the input schema (%v); -p values are typed by guess\n", err)
 		sch = nil
 	}
-	raw, err := buildInput(cmd, deps, sch)
+	raw, err := buildInput(cmd, deps, sch, ref.params)
 	if err != nil {
 		return p, err
 	}
@@ -246,11 +261,11 @@ type dryTarget struct {
 
 // emitDryRun prints the request that would be sent; nothing is uploaded or submitted.
 func emitDryRun(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths, model string, p preparedInput, t dryTarget, warn io.Writer) error {
-	out := map[string]any{
+	out := withPreset(map[string]any{
 		"dryRun": true, "model": model,
 		"body":           t.body,
 		"pendingUploads": p.pending,
-	}
+	}, p.preset)
 	if t.path != "" {
 		out["path"] = t.path
 	}
@@ -287,10 +302,10 @@ func findModel(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths,
 	return m, nil
 }
 
-// buildInput merges --input with the -p values. Plain -p values for keys the
+// buildInput merges the preset params, --input and the -p values (later wins). Plain -p values for keys the
 // schema does not declare are typed by guess; @file contents and --input
 // values stay as they are.
-func buildInput(cmd *cobra.Command, deps Deps, sch map[string]any) (map[string]any, error) {
+func buildInput(cmd *cobra.Command, deps Deps, sch, presetParams map[string]any) (map[string]any, error) {
 	flags := cmd.Flags()
 	var base map[string]any
 	if path, _ := flags.GetString("input"); path != "" {
@@ -320,7 +335,7 @@ func buildInput(cmd *cobra.Command, deps Deps, sch map[string]any) (map[string]a
 		}
 	}
 	over := unwrapFileValues(MergeInput(tagged, schema.GuessLiterals(undeclared)))
-	return MergeInput(base, over), nil
+	return MergeInput(MergeInput(presetParams, base), over), nil
 }
 
 func resolveOutDir(cmd *cobra.Command, cfg config.Config) string {
@@ -354,6 +369,7 @@ type finishArgs struct {
 	timeout           time.Duration
 	createdAt         time.Time
 	uploaded          []string
+	preset            string
 }
 
 // finishTask waits for the task, records the final state, downloads and emits.
@@ -381,12 +397,12 @@ func finishTask(cmd *cobra.Command, deps Deps, c *api.Client, paths config.Paths
 			return withTaskID(err, a.id, map[string]any{"resultUrls": urls, "code": output.CodeIO})
 		}
 	}
-	return output.Success(deps.Stdout, map[string]any{
+	return output.Success(deps.Stdout, withPreset(map[string]any{
 		"taskId": a.id, "model": a.model, "state": rec.State,
 		"files": files, "result": rec.Response, "creditsConsumed": rec.CreditsConsumed,
 		"costTime": rec.CostTime, "uploaded": nonNil(a.uploaded),
 		"ids": result.Extract(a.id, rec.Response),
-	})
+	}, a.preset))
 }
 
 func firstNonEmpty(a, b string) string {
