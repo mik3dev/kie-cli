@@ -13,39 +13,41 @@ import (
 )
 
 func TestParseValid(t *testing.T) {
-	got, err := preset.Parse([]byte("presets:\n- name: a\n  description: d\n  model: m/x\n  params: {n: 5, s: \"5\", b: true}\n"), "factory")
+	got, err := preset.Parse([]byte("presets:\n- name: a\n  description: d\n  model: m/x\n  params: {n: 5, s: \"5\", b: true}\n"), preset.SourceFactory)
 	if err != nil || len(got) != 1 {
 		t.Fatalf("got=%v err=%v", got, err)
 	}
 	p := got[0]
-	if p.Params["n"] != json.Number("5") || p.Params["s"] != "5" || p.Params["b"] != true || p.Source != "factory" {
+	if p.Params["n"] != json.Number("5") || p.Params["s"] != "5" || p.Params["b"] != true || p.Source != preset.SourceFactory {
 		t.Fatalf("bad preset: %#v", p)
 	}
 }
 
 func TestParseErrors(t *testing.T) {
-	cases := map[string]string{
-		"invalid yaml":  "presets: [",
-		"unknown key":   "presets:\n- name: a\n  modle: m\n",
-		"missing model": "presets:\n- name: a\n",
-		"bad name":      "presets:\n- name: Foo Bar\n  model: m\n",
-		"duplicate":     "presets:\n- name: a\n  model: m\n- name: a\n  model: n\n",
+	cases := []struct{ name, doc, want string }{
+		{"invalid yaml", "presets: [", ""},
+		{"unknown entry key", "presets:\n- name: a\n  model: m\n  modle: x\n", "modle"},
+		{"unknown top-level key", "presets:\n- name: a\n  model: m\npreset: []\n", "preset"},
+		{"missing model", "presets:\n- name: a\n", "model"},
+		{"bad name", "presets:\n- name: Foo Bar\n  model: m\n", "name"},
+		{"duplicate", "presets:\n- name: a\n  model: m\n- name: a\n  model: n\n", "duplicate"},
 	}
-	for name, doc := range cases {
-		t.Run(name, func(t *testing.T) {
-			if _, err := preset.Parse([]byte(doc), "user"); err == nil {
-				t.Fatal("expected error")
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			_, err := preset.Parse([]byte(c.doc), preset.SourceUser)
+			if err == nil || !strings.Contains(err.Error(), c.want) {
+				t.Fatalf("err=%v, want containing %q", err, c.want)
 			}
 		})
 	}
 }
 
 func TestParseEmptyAndUnmarshalableParams(t *testing.T) {
-	got, err := preset.Parse([]byte(""), "user")
+	got, err := preset.Parse([]byte(""), preset.SourceUser)
 	if err != nil || len(got) != 0 {
 		t.Fatalf("got=%v err=%v", got, err)
 	}
-	if _, err := preset.Parse([]byte("presets:\n- name: a\n  model: m\n  params: {k: .inf}\n"), "user"); err == nil {
+	if _, err := preset.Parse([]byte("presets:\n- name: a\n  model: m\n  params: {k: .inf}\n"), preset.SourceUser); err == nil {
 		t.Fatal("expected error for unencodable float")
 	}
 }
@@ -67,9 +69,9 @@ func TestLoadUserOverridesAndAdds(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(got) != 3 || got[0].Name != "a" || got[0].Model != "m2" || got[0].Source != "user" ||
-		got[0].Params != nil || got[1].Name != "b" || got[1].Source != "factory" ||
-		got[2].Name != "c" || got[2].Source != "user" {
+	if len(got) != 3 || got[0].Name != "a" || got[0].Model != "m2" || got[0].Source != preset.SourceUser ||
+		got[0].Params != nil || got[1].Name != "b" || got[1].Source != preset.SourceFactory ||
+		got[2].Name != "c" || got[2].Source != preset.SourceUser {
 		t.Fatalf("got %#v", got)
 	}
 	f, ok := preset.Find(got, "b")
@@ -113,7 +115,7 @@ func TestFactoryPresetsMatchLiveSchemas(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	list, err := preset.Parse(data, "factory")
+	list, err := preset.Parse(data, preset.SourceFactory)
 	if err != nil {
 		t.Fatal(err)
 	}
