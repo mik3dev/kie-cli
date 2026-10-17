@@ -1,6 +1,7 @@
 package cli_test
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"strings"
@@ -132,5 +133,102 @@ func TestRunNullSchemaSkipsValidation(t *testing.T) {
 	r := f.run(t, "run", "google/gemini-3-8-flash-tts", "-p", "text=hola", "--dry-run")
 	if r.code != 0 || !strings.Contains(r.stderr, "schema not synced") {
 		t.Fatalf("code=%d out=%s stderr=%s", r.code, r.out, r.stderr)
+	}
+}
+
+func writeFiles(t *testing.T, names ...string) []string {
+	t.Helper()
+	dir := t.TempDir()
+	paths := make([]string, len(names))
+	for i, n := range names {
+		paths[i] = filepath.Join(dir, n)
+		if err := os.WriteFile(paths[i], pngBytes, 0o600); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return paths
+}
+
+func TestRunDryRunPendingUploadsAreSorted(t *testing.T) {
+	ps := writeFiles(t, "a.png", "b.png", "c.png")
+	for i := 0; i < 8; i++ {
+		f := newFake(t)
+		r := f.run(t, "run", seedance, "-p", "prompt=x", "--dry-run", "--no-validate",
+			"-p", "zeta_image="+ps[0], "-p", "mid_image="+ps[2], "-p", "alpha_image="+ps[1])
+		pend, _ := r.m["pendingUploads"].([]any)
+		if r.code != 0 || len(pend) != 3 {
+			t.Fatalf("code=%d out=%s", r.code, r.out)
+		}
+		want := []string{ps[0], ps[1], ps[2]}
+		for j, w := range want {
+			if pend[j].(map[string]any)["path"] != w {
+				t.Fatalf("run %d: pendingUploads = %v, want order %v", i, pend, want)
+			}
+		}
+	}
+}
+
+func TestRunInvalidInputWithLocalFileDoesNotUpload(t *testing.T) {
+	f := newFake(t)
+	img := writeFiles(t, "a.png")[0]
+	r := f.run(t, "run", klingI2V, "-p", "prompt=x", "-p", "image_urls="+img, "-p", "bogus_field=1")
+	if r.code != 2 || errField(t, r.m, "code") != "validation" {
+		t.Fatalf("code=%d out=%s", r.code, r.out)
+	}
+	if f.uploadHits.Load() != 0 || f.createHits.Load() != 0 {
+		t.Fatalf("upload=%d create=%d", f.uploadHits.Load(), f.createHits.Load())
+	}
+}
+
+func TestRunValidationMessageSingular(t *testing.T) {
+	f := newFake(t)
+	r := f.run(t, "run", seedance, "-p", "prompt=x", "-p", "resolution=4k")
+	msg, _ := errField(t, r.m, "message").(string)
+	if !strings.Contains(msg, "(1 problem)") {
+		t.Fatalf("message = %q", msg)
+	}
+}
+
+// breakPatterns returns the schema fixture with every "pattern" turned into an invalid regex.
+func breakPatterns(t *testing.T, model string) json.RawMessage {
+	t.Helper()
+	b, err := os.ReadFile("../../testdata/live/schemas/" + strings.ReplaceAll(model, "/", "__") + ".json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc any
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	var walk func(v any)
+	walk = func(v any) {
+		switch x := v.(type) {
+		case map[string]any:
+			if _, ok := x["pattern"]; ok {
+				x["pattern"] = "("
+			}
+			for _, e := range x {
+				walk(e)
+			}
+		case []any:
+			for _, e := range x {
+				walk(e)
+			}
+		}
+	}
+	walk(doc)
+	out, _ := json.Marshal(doc)
+	return out
+}
+
+func TestRunUncompilableSchemaWarnsAndContinues(t *testing.T) {
+	f := newFake(t)
+	f.schemaFn = func(model string) json.RawMessage { return breakPatterns(t, model) }
+	r := f.run(t, "run", klingI2V, "-p", "prompt=x", "-p", "image_urls=https://x/a.png", "--no-wait")
+	if r.code != 0 || f.createHits.Load() != 1 {
+		t.Fatalf("code=%d hits=%d out=%s stderr=%s", r.code, f.createHits.Load(), r.out, r.stderr)
+	}
+	if !strings.Contains(r.stderr, "warning: cannot validate the input") {
+		t.Fatalf("stderr = %q", r.stderr)
 	}
 }

@@ -175,6 +175,7 @@ func prepareInput(cmd *cobra.Command, deps Deps, doc schema.Doc, model string, w
 	if err != nil {
 		return p, err
 	}
+	sort.SliceStable(p.pending, func(i, j int) bool { return p.pending[i].Path < p.pending[j].Path })
 	if sch == nil {
 		return p, nil
 	}
@@ -190,8 +191,8 @@ func prepareInput(cmd *cobra.Command, deps Deps, doc schema.Doc, model string, w
 	if noValidate, _ := cmd.Flags().GetBool("no-validate"); !noValidate {
 		return p, &output.Error{
 			Code: output.CodeValidation,
-			Message: fmt.Sprintf("input does not match the schema of %s (%d problems); fix the fields, or use --no-validate if the schema is wrong",
-				model, len(problems)),
+			Message: fmt.Sprintf("input does not match the schema of %s (%s); fix the fields, or use --no-validate if the schema is wrong",
+				model, problemCount(len(problems))),
 			Details: map[string]any{"problems": problems},
 		}
 	}
@@ -200,6 +201,13 @@ func prepareInput(cmd *cobra.Command, deps Deps, doc schema.Doc, model string, w
 	}
 	p.problems = problems
 	return p, nil
+}
+
+func problemCount(n int) string {
+	if n == 1 {
+		return "1 problem"
+	}
+	return fmt.Sprintf("%d problems", n)
 }
 
 // capGot returns a copy of problems with string "got" values cut to maxGotRunes runes.

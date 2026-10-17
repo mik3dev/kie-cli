@@ -35,6 +35,7 @@ type fakeKie struct {
 	createReply func() string // full envelope JSON; "" = success
 	recordReply func(n int32) string
 	cdnStatus   int
+	schemaFn    func(model string) json.RawMessage // overrides the schema fixture when non-nil
 }
 
 func envelope(data any) string {
@@ -67,6 +68,10 @@ func (f *fakeKie) serve(w http.ResponseWriter, r *http.Request) {
 		reply(envelope(readLive2(r, "models.json")))
 	case strings.HasSuffix(p, "/schema"):
 		model := strings.TrimSuffix(strings.TrimPrefix(p, "/api/v1/models/"), "/schema")
+		if f.schemaFn != nil {
+			reply(envelope(f.schemaFn(model)))
+			return
+		}
 		reply(envelope(readLive2(r, "schemas/"+strings.ReplaceAll(model, "/", "__")+".json")))
 	case strings.HasSuffix(p, "/price"):
 		model := strings.TrimSuffix(strings.TrimPrefix(p, "/api/v1/models/"), "/price")
