@@ -421,3 +421,13 @@ func TestRunInputFromStdin(t *testing.T) {
 		t.Fatalf("code=%d body=%v", r.code, body)
 	}
 }
+
+func TestRunCoercesNumberBySchema(t *testing.T) {
+	f := newFake(t)
+	r := f.run(t, "run", "bytedance/seedance-2-5", "-p", "prompt=x", "-p", "duration=5", "--no-wait")
+	body, _ := f.createBody.Load().(map[string]any)
+	in, _ := body["input"].(map[string]any)
+	if r.code != 0 || in["duration"] != 5.0 {
+		t.Fatalf("code=%d out=%s input=%v", r.code, r.out, in)
+	}
+}

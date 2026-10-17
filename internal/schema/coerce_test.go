@@ -30,6 +30,13 @@ func TestCoerce(t *testing.T) {
 		{"n", "5", json.Number("5")},
 		{"n", " 5 ", json.Number("5")},
 		{"n", "abc", "abc"},
+		{"n", "+5", json.Number("5")},
+		{"n", "007", json.Number("7")},
+		{"f", ".5", json.Number("0.5")},
+		{"f", "5.", json.Number("5")},
+		{"f", "+1.5", json.Number("1.5")},
+		{"arr", 5.0, []any{5.0}},
+		{"arr", json.Number("5"), []any{json.Number("5")}},
 		{"f", "1.5", json.Number("1.5")},
 		{"b", "TRUE", true},
 		{"b", "nope", "nope"},
@@ -52,7 +59,11 @@ func TestCoerce(t *testing.T) {
 		{"unknown", 3.0, 3.0},
 	}
 	for _, c := range cases {
-		got := schema.Coerce(sch, map[string]any{c.key: c.in})[c.key]
+		out := schema.Coerce(sch, map[string]any{c.key: c.in})
+		if _, err := json.Marshal(out); err != nil {
+			t.Errorf("%s=%#v: result does not marshal: %v", c.key, c.in, err)
+		}
+		got := out[c.key]
 		if !reflect.DeepEqual(got, c.want) {
 			t.Errorf("%s=%#v: got %#v, want %#v", c.key, c.in, got, c.want)
 		}

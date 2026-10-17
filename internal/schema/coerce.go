@@ -143,6 +143,9 @@ func coerceValue(p map[string]any, v any) any {
 			return s
 		}
 	}
+	if has(types, "array") {
+		return coerceItems(p, []any{v})
+	}
 	return v
 }
 
@@ -191,12 +194,12 @@ func fromString(p map[string]any, types []string, s string) any {
 		}
 		switch typ {
 		case "integer":
-			if _, err := strconv.ParseInt(t, 10, 64); err == nil {
-				return json.Number(t)
+			if n, err := strconv.ParseInt(t, 10, 64); err == nil {
+				return json.Number(strconv.FormatInt(n, 10))
 			}
 		case "number":
 			if f, err := strconv.ParseFloat(t, 64); err == nil && !math.IsInf(f, 0) && !math.IsNaN(f) {
-				return json.Number(t)
+				return json.Number(strconv.FormatFloat(f, 'f', -1, 64))
 			}
 		case "boolean":
 			switch strings.ToLower(t) {
