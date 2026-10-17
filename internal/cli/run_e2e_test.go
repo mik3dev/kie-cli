@@ -30,12 +30,18 @@ type fakeKie struct {
 	home     string
 
 	recordHits, createHits, uploadHits atomic.Int32
-	createBody                         atomic.Value // map[string]any
+	recoveryHits                       atomic.Int32
+	audioHits, characterHits           atomic.Int32             // synchronous omni routes
+	createBody                         atomic.Value             // map[string]any
+	omniBody                           atomic.Value             // map[string]any, last omni request
+	omniReply                          func(path string) string // full envelope JSON; "" = default success
 	// behaviour knobs
 	createReply func() string // full envelope JSON; "" = success
 	recordReply func(n int32) string
-	cdnStatus   int
-	schemaFn    func(model string) json.RawMessage // overrides the schema fixture when non-nil
+	// recoveryReply: full envelope JSON for GET /api/v1/suno/recovery/record-info; "" = default
+	recoveryReply func(n int32) string
+	cdnStatus     int
+	schemaFn      func(model string) json.RawMessage // overrides the schema fixture when non-nil
 }
 
 func envelope(data any) string {
@@ -94,6 +100,26 @@ func (f *fakeKie) serve(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		reply(envelope(map[string]string{"taskId": "task-1"}))
+	case p == "/api/v1/omni/audio/create", p == "/api/v1/omni/character/create":
+		if strings.Contains(p, "audio") {
+			f.audioHits.Add(1)
+		} else {
+			f.characterHits.Add(1)
+		}
+		var body map[string]any
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		f.omniBody.Store(body)
+		if f.omniReply != nil {
+			if s := f.omniReply(p); s != "" {
+				reply(s)
+				return
+			}
+		}
+		if strings.Contains(p, "audio") {
+			reply(envelope(map[string]string{"audioId": "au1", "name": "voz"}))
+			return
+		}
+		reply(envelope(map[string]string{"characterId": "ch1", "imageUrl": f.cdn.URL + "/c.png"}))
 	case p == "/api/v1/jobs/recordInfo":
 		n := f.recordHits.Add(1)
 		if f.recordReply != nil {
@@ -105,6 +131,22 @@ func (f *fakeKie) serve(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		reply(f.recordInfo("success"))
+	case p == "/api/v1/suno/recovery/record-info":
+		n := f.recoveryHits.Add(1)
+		if f.recoveryReply != nil {
+			if s := f.recoveryReply(n); s != "" {
+				reply(s)
+				return
+			}
+		}
+		if n == 1 {
+			reply(`{"code":201,"msg":"running","data":null}`)
+			return
+		}
+		reply(envelope([]map[string]string{
+			{"id": "a1", "audio_url": f.cdn.URL + "/1.mp3"},
+			{"id": "a2", "audio_url": f.cdn.URL + "/2.mp3"},
+		}))
 	case p == "/api/v1/common/download-url":
 		reply(`{"code":404,"msg":"no such file"}`)
 	default:
@@ -285,7 +327,7 @@ func TestRunPresetAndSyncModelsAreUsageErrors(t *testing.T) {
 		t.Fatalf("preset: code=%d out=%s", r.code, r.out)
 	}
 	// gemini-3-pro is a Chat model: hidden from list but found by Find; non-job.
-	if r := f.run(t, "run", "gemini-3-pro"); r.code != 2 || !strings.Contains(r.out, "stage 4") || errField(t, r.m, "code") != "usage" {
+	if r := f.run(t, "run", "gemini-3-pro"); r.code != 2 || !strings.Contains(r.out, "chat models are out of scope") || errField(t, r.m, "code") != "usage" {
 		t.Fatalf("chat: code=%d out=%s", r.code, r.out)
 	}
 	if f.createHits.Load() != 0 {

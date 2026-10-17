@@ -37,6 +37,11 @@ func sleepCtx(ctx context.Context, d time.Duration) error {
 // Wait polls with 3s..15s backoff (x1.5). Failure returns the Record and task_failed;
 // timeout or cancellation returns the last Record and timeout with the taskId.
 func (w Waiter) Wait(ctx context.Context, c *api.Client, id string, timeout time.Duration) (Record, error) {
+	return w.poll(ctx, id, timeout, func() (Record, error) { return Get(ctx, c, id) })
+}
+
+// poll is the shared backoff/timeout loop; fetch returns the current Record.
+func (w Waiter) poll(ctx context.Context, id string, timeout time.Duration, fetch func() (Record, error)) (Record, error) {
 	sleep, now := w.Sleep, w.Now
 	if sleep == nil {
 		sleep = sleepCtx
@@ -49,7 +54,7 @@ func (w Waiter) Wait(ctx context.Context, c *api.Client, id string, timeout time
 	last := Record{TaskID: id}
 	prev := ""
 	for {
-		rec, err := Get(ctx, c, id)
+		rec, err := fetch()
 		if err != nil {
 			if ctx.Err() != nil {
 				return last, timeoutErr(id)

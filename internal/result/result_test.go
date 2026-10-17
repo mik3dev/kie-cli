@@ -79,3 +79,52 @@ func TestExtractEmptyResponses(t *testing.T) {
 		t.Fatalf("marshal: %s %v", b, err)
 	}
 }
+
+func TestMediaURLs(t *testing.T) {
+	in := `{"characterId":"c1","imageUrl":"https://a/i.png","bodyImageUrl":"https://a/b.png","callbackUrl":"https://cb","x":{"stream_audio_url":"https://s"},"assetUrl":"asset://x","list":{"maskUrls":["https://a/m1.png","https://a/m1.png"]}}`
+	got := result.MediaURLs(json.RawMessage(in))
+	want := []string{"https://a/b.png", "https://a/i.png", "https://a/m1.png"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
+func TestURLsIncludesResultObjectMedia(t *testing.T) {
+	in := `{"resultObject":{"segments_count":2,"segments":[{"maskUrl":"https://a/0.png","name":"sky","index":0},{"maskUrl":"https://a/1.png","index":1}]}}`
+	got := result.URLs(json.RawMessage(in))
+	want := []string{"https://a/0.png", "https://a/1.png"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("got %v want %v", got, want)
+	}
+}
+
+func TestURLsTextOnlyResultObject(t *testing.T) {
+	in := `{"resultObject":{"lyricsData":[{"text":"la la","title":"t"}]}}`
+	got := result.URLs(json.RawMessage(in))
+	if got == nil || len(got) != 0 {
+		t.Fatalf("got %#v want empty non-nil", got)
+	}
+}
+
+func TestSyncIDs(t *testing.T) {
+	cases := []struct {
+		in   string
+		want result.IDs
+		js   string
+	}{
+		{`{"audioId":"au1","name":"v"}`, result.IDs{AudioIDs: []string{"au1"}}, `{"audio_ids":["au1"]}`},
+		{`{"characterId":"ch1"}`, result.IDs{CharacterIDs: []string{"ch1"}}, `{"character_ids":["ch1"]}`},
+		{`null`, result.IDs{}, `{}`},
+		{`{}`, result.IDs{}, `{}`},
+	}
+	for _, c := range cases {
+		got := result.SyncIDs(json.RawMessage(c.in))
+		if !reflect.DeepEqual(got, c.want) {
+			t.Errorf("%s: got %#v want %#v", c.in, got, c.want)
+		}
+		b, _ := json.Marshal(got)
+		if string(b) != c.js {
+			t.Errorf("%s: json %s want %s", c.in, b, c.js)
+		}
+	}
+}
