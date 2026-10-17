@@ -1,6 +1,6 @@
 # kie-cli — Diseño (Fase 00)
 
-Fecha: 2026-10-17 · Estado: aprobado por partes en conversación; pendiente aprobación del documento completo
+Fecha: 2026-10-17 · Estado: aprobado (2026-10-17)
 
 ## 1. Intención
 
