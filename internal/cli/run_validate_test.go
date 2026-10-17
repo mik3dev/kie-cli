@@ -232,3 +232,65 @@ func TestRunUncompilableSchemaWarnsAndContinues(t *testing.T) {
 		t.Fatalf("stderr = %q", r.stderr)
 	}
 }
+
+func createInput(t *testing.T, f *fakeKie) map[string]any {
+	t.Helper()
+	body, _ := f.createBody.Load().(map[string]any)
+	in, _ := body["input"].(map[string]any)
+	return in
+}
+
+func TestRunNilSchemaKeepsInputJSONStringsLiteral(t *testing.T) {
+	f := newFake(t)
+	in := filepath.Join(t.TempDir(), "in.json")
+	if err := os.WriteFile(in, []byte(`{"text":"42"}`), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	r := f.run(t, "run", "google/gemini-3-8-flash-tts", "--input", in, "--no-wait")
+	if got := createInput(t, f)["text"]; r.code != 0 || got != "42" {
+		t.Fatalf("code=%d text=%#v out=%s", r.code, got, r.out)
+	}
+}
+
+func TestRunNilSchemaKeepsFileContentLiteral(t *testing.T) {
+	f := newFake(t)
+	txt := filepath.Join(t.TempDir(), "t.txt")
+	if err := os.WriteFile(txt, []byte("[1,2]"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	r := f.run(t, "run", "google/gemini-3-8-flash-tts", "-p", "text=@"+txt, "--no-wait")
+	if got := createInput(t, f)["text"]; r.code != 0 || got != "[1,2]" {
+		t.Fatalf("code=%d text=%#v out=%s", r.code, got, r.out)
+	}
+}
+
+func TestRunNilSchemaStillGuessesPlainParams(t *testing.T) {
+	f := newFake(t)
+	r := f.run(t, "run", "google/gemini-3-8-flash-tts", "-p", "n=5", "-p", "text=hola", "--no-wait")
+	in := createInput(t, f)
+	if r.code != 0 || in["n"] != 5.0 || in["text"] != "hola" {
+		t.Fatalf("code=%d in=%#v out=%s", r.code, in, r.out)
+	}
+}
+
+func TestRunSchemaDeclaredStringKeepsFormat(t *testing.T) {
+	f := newFake(t)
+	r := f.run(t, "run", seedance, "-p", "prompt=1.50", "--no-wait")
+	if got := createInput(t, f)["prompt"]; r.code != 0 || got != "1.50" {
+		t.Fatalf("code=%d prompt=%#v out=%s", r.code, got, r.out)
+	}
+}
+
+func TestRunDryRunPendingPathIsAsGiven(t *testing.T) {
+	home := t.TempDir()
+	t.Setenv("HOME", home)
+	if err := os.WriteFile(filepath.Join(home, "a.png"), pngBytes, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	f := newFake(t)
+	r := f.run(t, "run", seedance, "-p", "prompt=x", "--dry-run", "--no-validate", "-p", "first_image=~/a.png")
+	pend, _ := r.m["pendingUploads"].([]any)
+	if r.code != 0 || len(pend) != 1 || pend[0].(map[string]any)["path"] != "~/a.png" {
+		t.Fatalf("code=%d out=%s", r.code, r.out)
+	}
+}

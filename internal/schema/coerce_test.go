@@ -54,7 +54,7 @@ func TestCoerce(t *testing.T) {
 		{"obj", `{"k":"7"}`, map[string]any{"k": json.Number("7")}},
 		{"obj", map[string]any{"k": "7", "z": "1"}, map[string]any{"k": json.Number("7"), "z": "1"}},
 		{"multi", "5", "5"},
-		{"unknown", "true", true},
+		{"unknown", "true", "true"},
 		{"unknown", "[intro]", "[intro]"},
 		{"unknown", 3.0, 3.0},
 	}
@@ -70,11 +70,33 @@ func TestCoerce(t *testing.T) {
 	}
 }
 
-func TestCoerceNilSchemaGuessesLiterals(t *testing.T) {
-	in := map[string]any{"a": "true", "b": "5", "c": `{"a":1}`, "d": "hola", "e": " 5", "f": "[1,2]", "g": "{nope"}
-	want := map[string]any{"a": true, "b": 5.0, "c": map[string]any{"a": 1.0}, "d": "hola", "e": " 5", "f": []any{1.0, 2.0}, "g": "{nope"}
-	if got := schema.Coerce(nil, in); !reflect.DeepEqual(got, want) {
+func TestCoerceKeepsUnknownKeysAndNilSchemaUnchanged(t *testing.T) {
+	in := map[string]any{"a": "true", "b": "5", "c": `{"a":1}`, "f": "[1,2]", "g": "{\"a\":1}\n"}
+	if got := schema.Coerce(nil, in); !reflect.DeepEqual(got, in) {
+		t.Fatalf("nil schema: got %#v", got)
+	}
+	if got := schema.Coerce(syntheticSchema(), in); !reflect.DeepEqual(got, in) {
+		t.Fatalf("unknown keys: got %#v", got)
+	}
+}
+
+func TestGuessLiterals(t *testing.T) {
+	in := map[string]any{
+		"a": "true", "b": "5", "c": `{"a":1}`, "d": "hola", "e": " 5", "f": "[1,2]", "g": "{nope",
+		"h": "1.50", "i": []any{"7", "x", "false"}, "j": 3,
+	}
+	want := map[string]any{
+		"a": true, "b": json.Number("5"), "c": map[string]any{"a": 1.0}, "d": "hola", "e": " 5",
+		"f": []any{1.0, 2.0}, "g": "{nope", "h": json.Number("1.5"),
+		"i": []any{json.Number("7"), "x", false}, "j": 3,
+	}
+	orig := map[string]any{"i": in["i"]}
+	got := schema.GuessLiterals(in)
+	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("got %#v", got)
+	}
+	if !reflect.DeepEqual(in["i"], orig["i"]) || in["a"] != "true" {
+		t.Fatalf("input was mutated: %#v", in)
 	}
 }
 

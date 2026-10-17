@@ -40,14 +40,14 @@ func PropSchema(sch map[string]any, key string) (map[string]any, bool) {
 // Coerce returns a new input where each value is converted to the type its
 // schema property declares. It never fails: a value that cannot be converted
 // is kept as is so validation can report it. Keys absent from the schema (or
-// a nil schema) get literal typing: JSON for {/[, bool, number, else string.
+// a nil schema) keep their value unchanged.
 func Coerce(sch map[string]any, input map[string]any) map[string]any {
 	out := make(map[string]any, len(input))
 	for k, v := range input {
 		if p, ok := PropSchema(sch, k); ok {
 			out[k] = coerceValue(p, v)
 		} else {
-			out[k] = guessLiteral(v)
+			out[k] = v
 		}
 	}
 	return out
@@ -248,24 +248,49 @@ func coerceItems(p map[string]any, items []any) []any {
 	return out
 }
 
-// guessLiteral types a string with no schema: JSON for {/[, bool, number.
+// GuessLiterals returns a new map where plain string values (and the elements
+// of repeated-key arrays) are typed by guess: JSON for {/[, bool, number,
+// else the string unchanged. Non-string values are kept as they are.
+func GuessLiterals(in map[string]any) map[string]any {
+	out := make(map[string]any, len(in))
+	for k, v := range in {
+		if items, ok := v.([]any); ok {
+			g := make([]any, len(items))
+			for i, it := range items {
+				g[i] = guessLiteral(it)
+			}
+			out[k] = g
+			continue
+		}
+		out[k] = guessLiteral(v)
+	}
+	return out
+}
+
+// guessLiteral types one string: JSON for {/[, bool, number.
 func guessLiteral(v any) any {
 	raw, ok := v.(string)
 	if !ok {
 		return v
 	}
-	var out any
 	if strings.HasPrefix(raw, "{") || strings.HasPrefix(raw, "[") {
+		var out any
 		if json.Unmarshal([]byte(raw), &out) == nil {
 			return out
 		}
 		return raw
 	}
-	if raw == strings.TrimSpace(raw) && json.Unmarshal([]byte(raw), &out) == nil {
-		switch out.(type) {
-		case bool, float64:
-			return out
-		}
+	if raw != strings.TrimSpace(raw) {
+		return raw
+	}
+	switch raw {
+	case "true":
+		return true
+	case "false":
+		return false
+	}
+	if f, err := strconv.ParseFloat(raw, 64); err == nil && !math.IsInf(f, 0) && !math.IsNaN(f) && json.Valid([]byte(raw)) {
+		return json.Number(strconv.FormatFloat(f, 'f', -1, 64))
 	}
 	return raw
 }
