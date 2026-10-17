@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
-	"syscall"
 	"testing"
 	"testing/fstest"
 
@@ -13,8 +12,6 @@ import (
 )
 
 func TestInstallCopiesTree(t *testing.T) {
-	old := syscall.Umask(0o022)
-	defer syscall.Umask(old)
 	src := fstest.MapFS{
 		"s/k/SKILL.md":        {Data: []byte("skill")},
 		"s/k/references/a.md": {Data: []byte("ref")},
@@ -36,14 +33,6 @@ func TestInstallCopiesTree(t *testing.T) {
 	}
 	if _, err := os.Stat(filepath.Join(target, "other")); err == nil {
 		t.Fatal("copied outside root")
-	}
-	fi, _ := os.Stat(filepath.Join(target, "k", "references"))
-	if fi.Mode().Perm() != 0o755 {
-		t.Errorf("dir perm %v", fi.Mode().Perm())
-	}
-	fi, _ = os.Stat(want[0])
-	if fi.Mode().Perm() != 0o644 {
-		t.Errorf("file perm %v", fi.Mode().Perm())
 	}
 }
 

@@ -63,6 +63,22 @@ func TestSkillsInstallDefaultHome(t *testing.T) {
 	}
 }
 
+func TestSkillsInstallUserProfile(t *testing.T) {
+	f := newFake(t)
+	tmp := t.TempDir()
+	r := f.runWith(t, func(d *cli.Deps) {
+		d.Env = func(k string) string {
+			return map[string]string{"HOME": "", "USERPROFILE": tmp, "KIE_API_KEY": "k-secret-123456", "KIE_CLI_HOME": f.home}[k]
+		}
+	}, "skills", "install")
+	if r.code != 0 {
+		t.Fatalf("code=%d out=%s", r.code, r.out)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, ".claude", "skills", "kie-generate", "SKILL.md")); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestSkillsInstallNoHome(t *testing.T) {
 	f := newFake(t)
 	r := f.runWith(t, func(d *cli.Deps) {

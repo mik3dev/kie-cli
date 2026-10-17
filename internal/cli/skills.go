@@ -4,6 +4,7 @@ import (
 	"path/filepath"
 
 	kiecli "github.com/mik3dev/kie-cli"
+	"github.com/mik3dev/kie-cli/internal/config"
 	"github.com/mik3dev/kie-cli/internal/output"
 	"github.com/mik3dev/kie-cli/internal/skills"
 	"github.com/spf13/cobra"
@@ -24,9 +25,9 @@ func newSkillsCmd(deps Deps) *cobra.Command {
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			target, _ := cmd.Flags().GetString("target")
 			if target == "" {
-				home := deps.Env("HOME")
+				home := config.UserHome(deps.Env)
 				if home == "" {
-					return usageErr("cannot find the home directory: set HOME or pass --target")
+					return usageErr("cannot find the home directory: set HOME or USERPROFILE, or pass --target")
 				}
 				target = filepath.Join(home, ".claude", "skills")
 			}
@@ -37,7 +38,7 @@ func newSkillsCmd(deps Deps) *cobra.Command {
 			return output.Success(deps.Stdout, map[string]any{"target": target, "files": files})
 		},
 	}
-	install.Flags().String("target", "", "skills directory (default $HOME/.claude/skills)")
+	install.Flags().String("target", "", "skills directory (default <home>/.claude/skills)")
 	cmd.AddCommand(install)
 	return cmd
 }
