@@ -2,8 +2,43 @@ package cli_test
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 	"testing"
 )
+
+var creditsRe = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*credits?`)
+
+// parseCredits extracts the credit amount ("<n> credit(s)") from a price description.
+func parseCredits(desc string) (float64, bool) {
+	m := creditsRe.FindStringSubmatch(desc)
+	if m == nil {
+		return 0, false
+	}
+	v, err := strconv.ParseFloat(m[1], 64)
+	return v, err == nil
+}
+
+func TestParseCredits(t *testing.T) {
+	cases := []struct {
+		in   string
+		want float64
+		ok   bool
+	}{
+		{"costs 12 credits (≈ $0.06)", 12, true},
+		{"$0.01 per 2 credits", 2, true},
+		{"Suno V3 ... 20 credits", 20, true},
+		{"1.5 Credit", 1.5, true},
+		{"", 0, false},
+		{"free", 0, false},
+	}
+	for _, c := range cases {
+		got, ok := parseCredits(c.in)
+		if ok != c.ok || got != c.want {
+			t.Errorf("parseCredits(%q) = %v,%v want %v,%v", c.in, got, ok, c.want, c.ok)
+		}
+	}
+}
 
 func TestLiveBudgetAllow(t *testing.T) {
 	b := liveBudget{limit: 30, start: 80}

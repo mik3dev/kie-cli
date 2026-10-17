@@ -9,7 +9,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -32,7 +31,6 @@ var (
 
 var (
 	cdnURLRe = regexp.MustCompile(`^https://`)
-	numberRe = regexp.MustCompile(`\d+(?:\.\d+)?`)
 )
 
 // sanitize returns v with every https URL rewritten to
@@ -120,6 +118,26 @@ func captureRecord(t *testing.T, taskID string) {
 	t.Logf("captured record fixture: %s", name)
 }
 
+// captureOnCleanup registers the record capture for m's taskId so it runs even
+// when a later assertion fails. Call it right after the run, before asserts.
+func captureOnCleanup(t *testing.T, m map[string]any) {
+	t.Helper()
+	id, _ := m["taskId"].(string)
+	if id == "" {
+		return
+	}
+	t.Cleanup(func() { captureRecord(t, id) })
+}
+
+func containsString(list []any, want string) bool {
+	for _, e := range list {
+		if s, ok := e.(string); ok && s == want {
+			return true
+		}
+	}
+	return false
+}
+
 // firstFile returns the path and kind of files[0], failing when absent or empty on disk.
 func firstFile(t *testing.T, m map[string]any) (path, kind string) {
 	t.Helper()
@@ -148,7 +166,8 @@ const zImagePrompt = "a red apple on white"
 func TestLivePaid1Image(t *testing.T) {
 	run := liveEnv(t)
 	paid(t, 0.8)
-	m, code := run("run", "z-image", "-p", "prompt="+zImagePrompt, "-p", "aspect_ratio=1:1", "--out", t.TempDir())
+	m, code := run("run", "z-image", "-p", "prompt="+zImagePrompt, "-p", "aspect_ratio=1:1", "--timeout", "5m", "--out", t.TempDir())
+	captureOnCleanup(t, m)
 	requireOK(t, m, code)
 	path, kind := firstFile(t, m)
 	if kind != "image" {
@@ -159,8 +178,6 @@ func TestLivePaid1Image(t *testing.T) {
 		t.Fatal(err)
 	}
 	paid1PNG = data
-	id, _ := m["taskId"].(string)
-	captureRecord(t, id)
 }
 
 func TestLivePaid2UploadChain(t *testing.T) {
@@ -173,15 +190,14 @@ func TestLivePaid2UploadChain(t *testing.T) {
 	if err := os.WriteFile(in, paid1PNG, 0o600); err != nil {
 		t.Fatal(err)
 	}
-	m, code := run("run", "recraft/remove-background", "-p", "image="+in, "--out", t.TempDir())
+	m, code := run("run", "recraft/remove-background", "-p", "image="+in, "--timeout", "5m", "--out", t.TempDir())
+	captureOnCleanup(t, m)
 	requireOK(t, m, code)
 	up, _ := m["uploaded"].([]any)
-	if len(up) == 0 {
-		t.Fatalf("uploaded is empty, want the local path")
+	if !containsString(up, in) {
+		t.Fatalf("uploaded = %v, want it to contain %q", up, in)
 	}
 	firstFile(t, m)
-	id, _ := m["taskId"].(string)
-	captureRecord(t, id)
 }
 
 func TestLivePaid3NoWait(t *testing.T) {
@@ -201,7 +217,7 @@ func TestLivePaid3NoWait(t *testing.T) {
 func TestLivePaid4PresetImage(t *testing.T) {
 	run := liveEnv(t)
 	paid(t, 4)
-	m, code := run("run", "@imagen-rapida", "-p", "prompt=a lighthouse at dusk", "--out", t.TempDir())
+	m, code := run("run", "@imagen-rapida", "-p", "prompt=a lighthouse at dusk", "--timeout", "5m", "--out", t.TempDir())
 	requireOK(t, m, code)
 	if m["preset"] != "imagen-rapida" {
 		t.Fatalf("preset = %v, want imagen-rapida", m["preset"])
@@ -212,24 +228,29 @@ func TestLivePaid4PresetImage(t *testing.T) {
 func TestLivePaid5PresetVoice(t *testing.T) {
 	run := liveEnv(t)
 	paid(t, 1)
-	m, code := run("run", "@voz", "-p", "text=Hola, esta es una prueba de kie-cli.", "--out", t.TempDir())
+	m, code := run("run", "@voz", "-p", "text=Hola, esta es una prueba de kie-cli.", "--timeout", "5m", "--out", t.TempDir())
+	captureOnCleanup(t, m)
 	requireOK(t, m, code)
 	if _, kind := firstFile(t, m); kind != "audio" {
 		t.Fatalf("kind = %q, want audio", kind)
 	}
-	id, _ := m["taskId"].(string)
-	captureRecord(t, id)
 }
 
 func TestLivePaid6Suno(t *testing.T) {
 	run := liveEnv(t)
 	paid(t, 12)
 	m, code := run("run", "@instrumental", "-p", "prompt=calm lo-fi piano", "--timeout", "15m", "--out", t.TempDir())
+	paid6TaskID, _ = m["taskId"].(string)
+	captureOnCleanup(t, m)
 	requireOK(t, m, code)
 	ids, _ := m["ids"].(map[string]any)
 	audio, _ := ids["audio_ids"].([]any)
 	if len(audio) != 2 {
 		t.Fatalf("audio_ids = %d, want 2", len(audio))
+	}
+	audioID, ok := audio[0].(string)
+	if !ok || audioID == "" {
+		t.Fatalf("audio_ids[0] = %v, want non-empty string", audio[0])
 	}
 	files, _ := m["files"].([]any)
 	if len(files) != 2 {
@@ -241,10 +262,8 @@ func TestLivePaid6Suno(t *testing.T) {
 			t.Fatalf("files[%d].kind = %v, want audio (real CDN Content-Type)", i, fm["kind"])
 		}
 	}
-	paid6TaskID, _ = m["taskId"].(string)
-	captureRecord(t, paid6TaskID)
 
-	ext, code := run("run", "ai-music-api/extend", "-p", "audio_id="+audio[0].(string), "-p", "model=V6", "--dry-run")
+	ext, code := run("run", "ai-music-api/extend", "-p", "audio_id="+audioID, "-p", "model=V6", "--dry-run")
 	requireOK(t, ext, code)
 }
 
@@ -256,8 +275,8 @@ func TestLivePaid7Recovery(t *testing.T) {
 	p, code := run("models", "price", "ai-music-api/suno-recovery-audio")
 	requireOK(t, p, code)
 	desc, _ := p["pricingDesc"].(string)
-	cost, err := strconv.ParseFloat(numberRe.FindString(desc), 64)
-	if err != nil || cost > recoveryMaxPrice {
+	cost, ok := parseCredits(desc)
+	if !ok || cost > recoveryMaxPrice {
 		t.Skipf("recovery price not known or above %v: %q", recoveryMaxPrice, desc)
 	}
 	paid(t, cost)
