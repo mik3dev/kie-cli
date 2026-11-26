@@ -4,9 +4,7 @@ A CLI built for AI agents to generate images, video and audio through the [kie.a
 
 ## Install
 
-The repository is private, so every method needs access to `github.com/mik3dev/kie-cli`.
-
-**(a) Release archive** (needs the [GitHub CLI](https://cli.github.com), logged in):
+**(a) Release archive:** download it from the [releases page](https://github.com/mik3dev/kie-cli/releases), or with the [GitHub CLI](https://cli.github.com):
 
 ```sh
 gh release download --pattern '*darwin_arm64*' --repo mik3dev/kie-cli
@@ -21,11 +19,8 @@ Archives are named `kie-cli_<version>_<os>_<arch>` (`tar.gz`, `zip` on Windows) 
 **(b) Go toolchain:**
 
 ```sh
-GOPRIVATE=github.com/mik3dev/* go install github.com/mik3dev/kie-cli/cmd/kie-cli@latest
-# PowerShell: $env:GOPRIVATE="github.com/mik3dev/*"; go install github.com/mik3dev/kie-cli/cmd/kie-cli@latest
+go install github.com/mik3dev/kie-cli/cmd/kie-cli@latest
 ```
-
-A private repo also needs git credentials: run `gh auth setup-git`, or use an SSH rewrite (`git config --global url."git@github.com:".insteadOf "https://github.com/"`).
 
 **(c) From a clone:**
 
@@ -136,3 +131,7 @@ set -a; . ./.env; set +a; KIE_E2E=1 KIE_E2E_PAID=1 KIE_E2E_CAPTURE=1 go test -ta
 ```
 
 Releasing: push a tag `vX.Y.Z`. The release workflow runs goreleaser and publishes the archives and `checksums.txt` to GitHub Releases.
+
+## License
+
+[MIT](LICENSE). Files under `testdata/live/` are responses captured from the kie.ai API and belong to kie.ai.
